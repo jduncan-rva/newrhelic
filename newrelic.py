@@ -19,7 +19,7 @@
 # File Name : test.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Fri 08 Nov 2013 02:41:16 PM EST
+# Last Modified : Fri 08 Nov 2013 02:50:03 PM EST
 # Purpose : 
 
 import json
@@ -133,6 +133,14 @@ class NewRHELic:
             x = psutil.disk_usage(p.mountpoint)
             self.metric_data[title] = x.percent
 
+    def _get_disk_stats(self):
+        '''this will show system-wide disk statistics'''
+        d = psutil.disk_io_counters()
+
+        for i in range(0,len(d)-1):
+            title = "%s/%s[%s]" % (self.disk_title, d._fields[i], self.disk_units)
+            self.metric_data[title] = d[i]
+
     def _get_mem_stats(self):
         '''this will return memory utilization statistics'''
         mem = psutil.virtual_memory()
@@ -183,6 +191,7 @@ class NewRHELic:
 
         if self.enable_disk:
             self._get_disk_utilization()
+            self._get_disk_stats()
         if self.enable_proc:
             self._get_cpu_utilization()
             self._get_cpu_states()
