@@ -19,7 +19,7 @@
 # File Name : test.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Fri 08 Nov 2013 02:50:03 PM EST
+# Last Modified : Fri 08 Nov 2013 02:58:24 PM EST
 # Purpose : 
 
 import json
@@ -106,7 +106,7 @@ class NewRHELic:
         io = psutil.network_io_counters()
 
         for i in range(0,len(io)-1):
-            title = "%s/%s[%s]" % (self.mem_title, io._fields[i], self.mem_units)
+            title = "Component/%s/%s[%s]" % (self.mem_title, io._fields[i], self.mem_units)
             self.metric_data[title] = io[i]
 
     def _get_cpu_states(self):
@@ -114,7 +114,7 @@ class NewRHELic:
         cpu_states = psutil.cpu_times_percent()
 
         for i in range(0, len(cpu_states)-1):
-            title = "%s/%s[%s]" % (self.proc_cpu_time_title, cpu_states._fields[i], self.proc_cpu_units)
+            title = "Component/%s/%s[%s]" % (self.proc_cpu_time_title, cpu_states._fields[i], self.proc_cpu_units)
             self.metric_data[title] = cpu_states[i]
 
     def _get_cpu_utilization(self):
@@ -122,14 +122,22 @@ class NewRHELic:
         cpu_util = psutil.cpu_percent(interval=0, percpu=True)
 
         for i in range(0, len(cpu_util)-1):
-            title = "%s/CPU%s[%s]" % (self.proc_util_title, i, self.proc_cpu_units)
+            title = "Component/%s/CPU%s[%s]" % (self.proc_util_title, i, self.proc_cpu_units)
             self.metric_data[title] = cpu_util[i]
+
+    def _get_cpu_load(self):
+        '''returns the 1/5/15 minute load averages'''
+        l = os.getloadavg()
+
+        self.metric_data['Component/CPU Load-1min[avg]'] = l[0]
+        self.metric_data['Component/CPU Load-5min[avg]'] = l[1]
+        self.metric_data['Component/CPU Load-15min[avg]'] = l[2]
 
     def _get_disk_utilization(self):
         '''This will return disk utilziation percentage for each mountpoint'''
         disks = psutil.disk_partitions() #all of the various partitions / volumes on a device
         for p in disks:
-            title = "%s/%s[%s]" % (self.disk_title, p.mountpoint.replace('/','&frasl;'), self.disk_units)
+            title = "Component/%s/%s[%s]" % (self.disk_title, p.mountpoint.replace('/','&frasl;'), self.disk_units)
             x = psutil.disk_usage(p.mountpoint)
             self.metric_data[title] = x.percent
 
@@ -138,7 +146,7 @@ class NewRHELic:
         d = psutil.disk_io_counters()
 
         for i in range(0,len(d)-1):
-            title = "%s/%s[%s]" % (self.disk_title, d._fields[i], self.disk_units)
+            title = "Component/%s/%s[%s]" % (self.disk_title, d._fields[i], self.disk_units)
             self.metric_data[title] = d[i]
 
     def _get_mem_stats(self):
@@ -146,9 +154,9 @@ class NewRHELic:
         mem = psutil.virtual_memory()
         for i in range(0, len(mem)-1):
             if mem._fields[i] == 'percent':
-                title = "%s/%s[percent]" % (self.mem_title, mem._fields[i])
+                title = "Component/%s/%s[percent]" % (self.mem_title, mem._fields[i])
             else:
-                title = "%s/%s[%s]" % (self.mem_title, mem._fields[i], self.mem_units)
+                title = "Component/%s/%s[%s]" % (self.mem_title, mem._fields[i], self.mem_units)
 
             self.metric_data[title] = mem[i]
 
@@ -157,9 +165,9 @@ class NewRHELic:
         swap = psutil.swap_memory()
         for i in range(0, len(swap)-1):
             if swap._fields[i] == 'percent':
-                title = "%s/%s[percent]" % (self.swap_title, swap._fields[i])
+                title = "Component/%s/%s[percent]" % (self.swap_title, swap._fields[i])
             else:
-                title = "%s/%s[%s]" % (self.swap_title, swap._fields[i], self.swap_units)
+                title = "Component/%s/%s[%s]" % (self.swap_title, swap._fields[i], self.swap_units)
 
             self.metric_data[title] = swap[i]
 
@@ -195,6 +203,7 @@ class NewRHELic:
         if self.enable_proc:
             self._get_cpu_utilization()
             self._get_cpu_states()
+            self._get_cpu_load()
         if self.enable_mem:
             self._get_mem_stats()
         if self.enable_net:
