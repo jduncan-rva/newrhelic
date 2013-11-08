@@ -19,7 +19,7 @@
 # File Name : test.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Fri 08 Nov 2013 11:13:24 AM EST
+# Last Modified : Fri 08 Nov 2013 11:59:46 AM EST
 # Purpose : 
 
 import json
@@ -56,6 +56,12 @@ class NewRHELic:
             self.req.add_header("Content-Type","application/json")
             self.req.add_header("Accept","application/json")
 
+            #create some dictionaries to hold the various types of data. these will be merged later into the component stanza
+            self.disk_data = {}
+            self.net_data = {}
+            self.mem_data = {}
+            self.proc_data = {}
+
             if config.getboolean('plugin','enable_all') == True:
                 self.enable_disk = True
                 self.enable_net = True
@@ -91,47 +97,35 @@ class NewRHELic:
 
     def _get_net_stats(self):
         '''This will form network IO stats for the entire system'''
-        data = {}
         io = psutil.network_io_counters()
 
         for i in range(0,len(io)-1):
             title = "%s/%s[%s]" % (self.mem_title, io._fields[i], self.mem_units)
-            data[title] = io[i]
-
-        return data
+            self.net_data[title] = io[i]
 
     def _get_cpu_states(self):
         '''This will get CPU states as a percentage of time'''
-        data = {}
         cpu_states = psutil.cpu_times_percent()
 
         for i in range(0, len(cpu_states)-1):
             title = "%s/%s[%s]" % (self.proc_cpu_time_title, cpu_states._fields[i], self.proc_cpu_units)
-            data[title] = cpu_states[i]
-
-        return data
+            self.proc_data[title] = cpu_states[i]
 
     def _get_cpu_utilization(self):
         '''This will return per-CPU utilization'''
-        data = {}
         cpu_util = psutil.cpu_percent(interval=0, percpu=True)
 
         for i in range(0, len(cpu_util)-1):
-            title = "%s/%s[%s]" % (self.proc_util_title, cpu_util._fields[i], self.proc_cpu_units)
-            data[title] = cpu_util[i]
-
-        return data
+            title = "%s/CPU%s[%s]" % (self.proc_util_title, i, self.proc_cpu_units)
+            self.proc_data[title] = cpu_util[i]
 
     def _get_disk_utilization(self):
         '''This will return disk utilziation percentage for each mountpoint'''
-        data = {}
         disks = psutil.disk_partitions() #all of the various partitions / volumes on a device
         for p in disks:
             title = "%s/%s[%s]" % (self.disk_title, p.mountpoint, self.disk_units)
             x = psutil.disk_usage(p.mountpoint)
-            data[title] = x.percent
-
-        return data
+            self.disk_data[title] = x.percent
 
     def _build_agent_stanza(self):
         '''this will build the 'agent' stanza of the new relic json call'''
@@ -143,15 +137,43 @@ class NewRHELic:
 
         self.json_data['agent'] = values
 
+    def _build_component_stanza(self):
+        '''this will build the 'component' stanza for the new relic json call'''
 
+        c_list = []
+        c_dict = {}
+        c_dict['name'] = self.name
+        c_dict['guid'] = self.guid
+        c_dict['duration'] = self.duration
 
+        if self.enable_disk:
+            self._get_disk_utilization()
+        if self.enable_proc:
+            self._get_cpu_utilization()
+            self._get_cpu_states()
+        if self.enable_mem:
+            pass
+        if self.enable_net:
+            self._get_net_stats()
 
+        data = dict(self.disk_data.items() + self.net_data.items() + self.mem_data.items() + self.proc_data.items())
+        c_dict['metrics'] = data
+        c_list.append(c_dict)
+
+        self.json_data['components'] = c_list
+
+    def _create_json_request(self):
+        '''this will glue it all together into a json request and execute'''
+        self._build_agent_stanza()
+        self._build_component_stanza()
+
+        response = urllib2.urlopen(self.req, self.json_data)
 
 '''
 #do some heavy lifting
 io = psutil.network_io_counters()
 
-# form the raw data up
+# form tresponse = urllib2.urlopen(req, json_data)he raw data up
 data = {"agent": {
                     'host': hostname,
                     'pid': 1000,
