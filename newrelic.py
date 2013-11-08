@@ -19,7 +19,7 @@
 # File Name : test.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Fri 08 Nov 2013 02:28:30 PM EST
+# Last Modified : Fri 08 Nov 2013 02:41:16 PM EST
 # Purpose : 
 
 import json
@@ -200,8 +200,8 @@ class NewRHELic:
 
     def add_to_newrelic(self):
         '''this will glue it all together into a json request and execute'''
-        self._build_component_stanza()
+        self._build_component_stanza()  #get the data added up
         response = urllib2.urlopen(self.req, json.dumps(self.json_data))
         self._reset_json_data()
 
-
+        return response.getcode()
