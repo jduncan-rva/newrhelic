@@ -19,7 +19,7 @@
 # File Name : test.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Fri 08 Nov 2013 02:17:56 PM EST
+# Last Modified : Fri 08 Nov 2013 02:28:30 PM EST
 # Purpose : 
 
 import json
@@ -138,9 +138,9 @@ class NewRHELic:
         mem = psutil.virtual_memory()
         for i in range(0, len(mem)-1):
             if mem._fields[i] == 'percent':
-                title = "%s/%s[percent]" % (self.mem_title, mem._fields[m])
+                title = "%s/%s[percent]" % (self.mem_title, mem._fields[i])
             else:
-                title = "%s/%s[%s]" % (self.mem_title, mem._fields[m], self.mem_units)
+                title = "%s/%s[%s]" % (self.mem_title, mem._fields[i], self.mem_units)
 
             self.metric_data[title] = mem[i]
 
@@ -149,11 +149,11 @@ class NewRHELic:
         swap = psutil.swap_memory()
         for i in range(0, len(swap)-1):
             if swap._fields[i] == 'percent':
-                title = "%s/%s[percent]" % (self.swap_title, swap._fields[m])
+                title = "%s/%s[percent]" % (self.swap_title, swap._fields[i])
             else:
-                title = "%s/%s[%s]" % (self.swap_title, swap._fields[m], swap.mem_units)
+                title = "%s/%s[%s]" % (self.swap_title, swap._fields[i], self.swap_units)
 
-            self.metric_data[title] = mem[i]
+            self.metric_data[title] = swap[i]
 
 
     def _build_agent_stanza(self):
@@ -201,7 +201,7 @@ class NewRHELic:
     def add_to_newrelic(self):
         '''this will glue it all together into a json request and execute'''
         self._build_component_stanza()
-        response = urllib2.urlopen(self.req, self.json_data)
+        response = urllib2.urlopen(self.req, json.dumps(self.json_data))
         self._reset_json_data()
 
 
