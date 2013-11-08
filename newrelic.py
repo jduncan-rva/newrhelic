@@ -19,7 +19,7 @@
 # File Name : test.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Fri 08 Nov 2013 12:17:07 AM EST
+# Last Modified : Fri 08 Nov 2013 11:13:24 AM EST
 # Purpose : 
 
 import json
@@ -36,6 +36,9 @@ class NewRHELic:
 
         self.hostname = platform.node()
         self.debug = debug
+        self.version = 0.1
+
+        self.json_data = {}     #a construct to hold the json call data as we build it
 
         try:
             config_file = os.path.expanduser('~/.newrelic')
@@ -47,6 +50,11 @@ class NewRHELic:
             self.duration = config.getint('plugin', 'duration')
             self.guid = config.get('plugin', 'guid')
             self.name = config.get('plugin', 'name')
+
+            self.req = urllib2.Request(self.api_url)
+            self.req.add_header("X-License-Key", self.license_key)
+            self.req.add_header("Content-Type","application/json")
+            self.req.add_header("Accept","application/json")
 
             if config.getboolean('plugin','enable_all') == True:
                 self.enable_disk = True
@@ -124,6 +132,17 @@ class NewRHELic:
             data[title] = x.percent
 
         return data
+
+    def _build_agent_stanza(self):
+        '''this will build the 'agent' stanza of the new relic json call'''
+
+        values = {}
+        values['host'] = self.hostname
+        values['pid'] = 1000
+        values['version'] = self.version
+
+        self.json_data['agent'] = values
+
 
 
 
