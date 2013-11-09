@@ -19,12 +19,11 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sat 09 Nov 2013 02:06:03 PM EST
+# Last Modified : Sat 09 Nov 2013 02:38:46 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
 import psutil
-import platform
 import urllib2
 import ConfigParser
 import os
@@ -34,7 +33,7 @@ class NewRHELic:
 
     def __init__(self, debug=False):
 
-        self.hostname = platform.node()
+        self.hostname = os.uname()[1]   #this will likely be Linux-specific, but I don't want to load a whole module to get a hostname another way
         self.debug = debug
 
         self.json_data = {}     #a construct to hold the json call data as we build it
