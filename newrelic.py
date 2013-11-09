@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sat 09 Nov 2013 02:38:46 PM EST
+# Last Modified : Sat 09 Nov 2013 03:28:47 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -28,12 +28,19 @@ import urllib2
 import ConfigParser
 import os
 import sys
+import time
 
 class NewRHELic:
 
     def __init__(self, debug=False):
 
-        self.hostname = os.uname()[1]   #this will likely be Linux-specific, but I don't want to load a whole module to get a hostname another way
+        #store some system info
+        self.uname = os.uname()
+
+        self.hostname = self.uname[1]  #this will likely be Linux-specific, but I don't want to load a whole module to get a hostname another way
+        self.kernel = self.uname[2]
+        self.arch = self.uname[4]
+
         self.debug = debug
 
         self.json_data = {}     #a construct to hold the json call data as we build it
@@ -64,6 +71,7 @@ class NewRHELic:
                 self.enable_mem = True
                 self.enable_proc = True
                 self.enable_swap = True
+
             else:
                 self.enable_disk = config.getboolean('plugin', 'enable_disk')
                 self.enable_net = config.getboolean('plugin', 'enable_network')
@@ -94,6 +102,20 @@ class NewRHELic:
         except:
             print "Cannot Open Config File", sys.exc_info()[0]
             raise
+
+    def _get_boottime(self):
+        '''a quick function to make uptime human-readable'''
+        a = time.gmtime(psutil.BOOT_TIME)
+        boottime = "%s-%s-%s %s:%s:%s" % (a.tm_mon, a.tm_mday, a.tm_year, a.tm_hour, a.tm_min, a.tm_sec)
+
+        return boottime
+
+    def _get_sys_info(self):
+        '''This will populate some basic system information'''
+
+        self.metric_data['/Component/System Information/Kernel[string]'] = self.kernel
+        self.metric_data['/Component/System Information/Arch[string]'] = self.arch
+        self.metric_data['/Component/System Information/Boot Time[datetime]'] = self._get_boottime()
 
     def _get_net_stats(self):
         '''This will form network IO stats for the entire system'''
