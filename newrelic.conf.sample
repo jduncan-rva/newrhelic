@@ -1,6 +1,6 @@
 [site]
 
-key = <your key goes here>
+key = <your license key here>
 url = https://platform-api.newrelic.com/platform/v1/metrics
 
 [plugin]
@@ -15,22 +15,21 @@ enable_disk = False
 enable_network = False
 enable_memory = True
 enable_proc = True
+enable_swap = True
 
 [disk]
 title = Disk Statistics
-units = percent
 
 [network]
-interfaces = eth0,eth1,eth2
 title = Network Statistics
 
 [memory]
 title = Memory Statistics
-units = bytes
 
 [proc]
 title = Processor Statistics
 cpu_time_title = CPU Time Statistics
 cpu_util_title = CPU Utilization
-cpu_units = percent
 
+[swap]
+title = Swap Statistics

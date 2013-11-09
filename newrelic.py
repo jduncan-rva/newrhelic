@@ -16,11 +16,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# File Name : test.py
+# File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Fri 08 Nov 2013 03:00:49 PM EST
-# Purpose : 
+# Last Modified : Sat 09 Nov 2013 09:20:31 AM EST
+# Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
 import psutil
@@ -36,10 +36,8 @@ class NewRHELic:
 
         self.hostname = platform.node()
         self.debug = debug
-        self.version = 0.1
 
         self.json_data = {}     #a construct to hold the json call data as we build it
-
 
         try:
             config_file = os.path.expanduser('~/.newrelic')
@@ -51,6 +49,7 @@ class NewRHELic:
             self.duration = config.getint('plugin', 'duration')
             self.guid = config.get('plugin', 'guid')
             self.name = config.get('plugin', 'name')
+            self.version = config.get('plugin','version')
 
             self.req = urllib2.Request(self.api_url)
             self.req.add_header("X-License-Key", self.license_key)
@@ -75,7 +74,6 @@ class NewRHELic:
 
             if self.enable_disk:
                 self.disk_title = config.get('disk','title')
-                self.disk_units = config.get('disk','units')
 
             if self.enable_net:
                 self.net_title = config.get('network','title')
@@ -83,17 +81,14 @@ class NewRHELic:
 
             if self.enable_mem:
                 self.mem_title = config.get('memory','title')
-                self.mem_units = config.get('memory', 'units')
 
             if self.enable_proc:
                 self.proc_title = config.get('proc','title')
                 self.proc_cpu_time_title = config.get('proc','cpu_time_title')
                 self.proc_util_title = config.get('proc','cpu_util_title')
-                self.proc_cpu_units = config.get('proc', 'cpu_units')
 
             if self.enable_swap:
                 self.swap_title = config.get('swap','title')
-                self.swap_units = config.get('swap','units')
 
             self._build_agent_stanza()
 
@@ -106,7 +101,7 @@ class NewRHELic:
         io = psutil.network_io_counters()
 
         for i in range(0,len(io)-1):
-            title = "Component/%s/%s[%s]" % (self.mem_title, io._fields[i], self.mem_units)
+            title = "Component/%s/%s[bytes]" % (self.mem_title, io._fields[i])
             self.metric_data[title] = io[i]
 
     def _get_cpu_states(self):
@@ -114,7 +109,7 @@ class NewRHELic:
         cpu_states = psutil.cpu_times_percent()
 
         for i in range(0, len(cpu_states)-1):
-            title = "Component/%s/%s[%s]" % (self.proc_cpu_time_title, cpu_states._fields[i], self.proc_cpu_units)
+            title = "Component/%s/%s[percent]" % (self.proc_cpu_time_title, cpu_states._fields[i])
             self.metric_data[title] = cpu_states[i]
 
     def _get_cpu_utilization(self):
@@ -122,7 +117,7 @@ class NewRHELic:
         cpu_util = psutil.cpu_percent(interval=0, percpu=True)
 
         for i in range(0, len(cpu_util)-1):
-            title = "Component/%s/CPU%s[%s]" % (self.proc_util_title, i, self.proc_cpu_units)
+            title = "Component/%s/CPU%s[percent]" % (self.proc_util_title, i)
             self.metric_data[title] = cpu_util[i]
 
     def _get_cpu_load(self):
@@ -137,7 +132,7 @@ class NewRHELic:
         '''This will return disk utilziation percentage for each mountpoint'''
         disks = psutil.disk_partitions() #all of the various partitions / volumes on a device
         for p in disks:
-            title = "Component/%s/%s[%s]" % (self.disk_title, p.mountpoint.replace('/','root-'), self.disk_units)
+            title = "Component/%s/%s[percent]" % (self.disk_title, p.mountpoint.replace('/','root-'))
             x = psutil.disk_usage(p.mountpoint)
             self.metric_data[title] = x.percent
 
@@ -146,7 +141,7 @@ class NewRHELic:
         d = psutil.disk_io_counters()
 
         for i in range(0,len(d)-1):
-            title = "Component/%s/%s[%s]" % (self.disk_title, d._fields[i], self.disk_units)
+            title = "Component/%s/%s[bytes]" % (self.disk_title, d._fields[i])
             self.metric_data[title] = d[i]
 
     def _get_mem_stats(self):
@@ -156,7 +151,7 @@ class NewRHELic:
             if mem._fields[i] == 'percent':
                 title = "Component/%s/%s[percent]" % (self.mem_title, mem._fields[i])
             else:
-                title = "Component/%s/%s[%s]" % (self.mem_title, mem._fields[i], self.mem_units)
+                title = "Component/%s/%s[bytes]" % (self.mem_title, mem._fields[i])
 
             self.metric_data[title] = mem[i]
 
@@ -167,14 +162,12 @@ class NewRHELic:
             if swap._fields[i] == 'percent':
                 title = "Component/%s/%s[percent]" % (self.swap_title, swap._fields[i])
             else:
-                title = "Component/%s/%s[%s]" % (self.swap_title, swap._fields[i], self.swap_units)
+                title = "Component/%s/%s[bytes]" % (self.swap_title, swap._fields[i])
 
             self.metric_data[title] = swap[i]
 
-
     def _build_agent_stanza(self):
         '''this will build the 'agent' stanza of the new relic json call'''
-
         values = {}
         values['host'] = self.hostname
         values['pid'] = 1000
@@ -184,13 +177,11 @@ class NewRHELic:
 
     def _reset_json_data(self):
         '''this will 'reset' the json data structure and prepare for the next call. It does this by mimicing what happens in __init__'''
-
         self.json_data = {}
         self._build_agent_stanza()
 
     def _build_component_stanza(self):
         '''this will build the 'component' stanza for the new relic json call'''
-
         c_list = []
         c_dict = {}
         c_dict['name'] = self.hostname
@@ -219,7 +210,13 @@ class NewRHELic:
     def add_to_newrelic(self):
         '''this will glue it all together into a json request and execute'''
         self._build_component_stanza()  #get the data added up
-        response = urllib2.urlopen(self.req, json.dumps(self.json_data))
-        self._reset_json_data()
+        try:
+            response = urllib2.urlopen(self.req, json.dumps(self.json_data))
+            print response.getcode()
+            print json.dumps(self.json_data)
+        except urllib2.HTTPError, err:
+            print err.code
+            print json.dumps(self.json_data)
+            pass
 
-        return response.getcode()
+        self._reset_json_data()
