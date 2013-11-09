@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sat 09 Nov 2013 09:20:31 AM EST
+# Last Modified : Sat 09 Nov 2013 09:31:55 AM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -141,7 +141,12 @@ class NewRHELic:
         d = psutil.disk_io_counters()
 
         for i in range(0,len(d)-1):
-            title = "Component/%s/%s[bytes]" % (self.disk_title, d._fields[i])
+            if d._fields[i] == 'read_time' or d._fields[i] == 'write_time':         #statistics come in multiple units from this output
+                title = "Component/%s/%s[ms]" % (self.disk_title, d._fields[i])
+            elif d._fields[i] == 'read_count' or d._fields[i] == 'write_count':
+                title = "Component/%s/%s[integer]" % (self.disk_title, d._fields[i])
+            else:
+                title = "Component/%s/%s[bytes]" % (self.disk_title, d._fields[i])
             self.metric_data[title] = d[i]
 
     def _get_mem_stats(self):
