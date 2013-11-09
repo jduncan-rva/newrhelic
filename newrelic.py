@@ -19,7 +19,7 @@
 # File Name : test.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Fri 08 Nov 2013 02:58:24 PM EST
+# Last Modified : Fri 08 Nov 2013 03:00:49 PM EST
 # Purpose : 
 
 import json
@@ -137,7 +137,7 @@ class NewRHELic:
         '''This will return disk utilziation percentage for each mountpoint'''
         disks = psutil.disk_partitions() #all of the various partitions / volumes on a device
         for p in disks:
-            title = "Component/%s/%s[%s]" % (self.disk_title, p.mountpoint.replace('/','&frasl;'), self.disk_units)
+            title = "Component/%s/%s[%s]" % (self.disk_title, p.mountpoint.replace('/','root-'), self.disk_units)
             x = psutil.disk_usage(p.mountpoint)
             self.metric_data[title] = x.percent
 
