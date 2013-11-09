@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sat 09 Nov 2013 03:28:47 PM EST
+# Last Modified : Sat 09 Nov 2013 03:31:47 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -163,11 +163,11 @@ class NewRHELic:
 
         for i in range(0,len(d)-1):
             if d._fields[i] == 'read_time' or d._fields[i] == 'write_time':         #statistics come in multiple units from this output
-                title = "Component/%s/%s[ms]" % (self.disk_title, d._fields[i])
+                title = "Component/Utilzation/%s/%s[ms]" % (self.disk_title, d._fields[i])
             elif d._fields[i] == 'read_count' or d._fields[i] == 'write_count':
-                title = "Component/%s/%s[integer]" % (self.disk_title, d._fields[i])
+                title = "Component/IO-Count/%s/%s[integer]" % (self.disk_title, d._fields[i])
             else:
-                title = "Component/%s/%s[bytes]" % (self.disk_title, d._fields[i])
+                title = "Component/IO-Bytes/%s/%s[bytes]" % (self.disk_title, d._fields[i])
             self.metric_data[title] = d[i]
 
     def _get_mem_stats(self):
@@ -175,9 +175,9 @@ class NewRHELic:
         mem = psutil.virtual_memory()
         for i in range(0, len(mem)-1):
             if mem._fields[i] == 'percent':
-                title = "Component/%s/%s[percent]" % (self.mem_title, mem._fields[i])
+                title = "Component/Utilization/%s/%s[percent]" % (self.mem_title, mem._fields[i])
             else:
-                title = "Component/%s/%s[bytes]" % (self.mem_title, mem._fields[i])
+                title = "Component/IO/%s/%s[bytes]" % (self.mem_title, mem._fields[i])
 
             self.metric_data[title] = mem[i]
 
@@ -186,9 +186,9 @@ class NewRHELic:
         swap = psutil.swap_memory()
         for i in range(0, len(swap)-1):
             if swap._fields[i] == 'percent':
-                title = "Component/%s/%s[percent]" % (self.swap_title, swap._fields[i])
+                title = "Component/Utilzation/%s/%s[percent]" % (self.swap_title, swap._fields[i])
             else:
-                title = "Component/%s/%s[bytes]" % (self.swap_title, swap._fields[i])
+                title = "Component/IO/%s/%s[bytes]" % (self.swap_title, swap._fields[i])
 
             self.metric_data[title] = swap[i]
 
