@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sat 09 Nov 2013 09:31:55 AM EST
+# Last Modified : Sat 09 Nov 2013 09:50:06 AM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -218,10 +218,10 @@ class NewRHELic:
         try:
             response = urllib2.urlopen(self.req, json.dumps(self.json_data))
             print response.getcode()
-            print json.dumps(self.json_data)
+            #print json.dumps(self.json_data)
         except urllib2.HTTPError, err:
             print err.code
-            print json.dumps(self.json_data)
+            #print json.dumps(self.json_data)
             pass
-
+        response.close()
         self._reset_json_data()
