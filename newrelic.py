@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sat 09 Nov 2013 09:50:06 AM EST
+# Last Modified : Sat 09 Nov 2013 10:35:13 AM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -217,11 +217,13 @@ class NewRHELic:
         self._build_component_stanza()  #get the data added up
         try:
             response = urllib2.urlopen(self.req, json.dumps(self.json_data))
-            print response.getcode()
-            #print json.dumps(self.json_data)
+            if self.debug:
+                print response.getcode()
+                print json.dumps(self.json_data)
+            response.close()
         except urllib2.HTTPError, err:
-            print err.code
-            #print json.dumps(self.json_data)
-            pass
-        response.close()
+            if self.debug:
+                print err.code
+                print json.dumps(self.json_data)
+            pass    #i know, i don't like it either, but we don't want a single failed connection to break the loop.
         self._reset_json_data()
