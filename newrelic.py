@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sat 09 Nov 2013 10:35:13 AM EST
+# Last Modified : Sat 09 Nov 2013 02:06:03 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -226,4 +226,8 @@ class NewRHELic:
                 print err.code
                 print json.dumps(self.json_data)
             pass    #i know, i don't like it either, but we don't want a single failed connection to break the loop.
+        except urllib2.URLError, err:
+            if self.debug:
+                print err   #this error will kick if you lose DNS resolution briefly. We'll keep trying.
+            pass
         self._reset_json_data()
