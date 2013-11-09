@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sat 09 Nov 2013 03:31:47 PM EST
+# Last Modified : Sat 09 Nov 2013 03:48:36 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -116,6 +116,7 @@ class NewRHELic:
         self.metric_data['/Component/System Information/Kernel[string]'] = self.kernel
         self.metric_data['/Component/System Information/Arch[string]'] = self.arch
         self.metric_data['/Component/System Information/Boot Time[datetime]'] = self._get_boottime()
+        self.metric_data['/Component/System Information/Process Count[integer]'] = len(psutil.get_pid_list())
 
     def _get_net_stats(self):
         '''This will form network IO stats for the entire system'''
@@ -213,6 +214,9 @@ class NewRHELic:
         c_dict['name'] = self.hostname
         c_dict['guid'] = self.guid
         c_dict['duration'] = self.duration
+
+        #always get the sys information
+        self._get_sys_info()
 
         if self.enable_disk:
             self._get_disk_utilization()
