@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sat 09 Nov 2013 03:48:36 PM EST
+# Last Modified : Sun 10 Nov 2013 06:47:21 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -44,6 +44,28 @@ class NewRHELic:
         self.debug = debug
 
         self.json_data = {}     #a construct to hold the json call data as we build it
+
+        self.first_run = True   #this is set to False after the first run function is called
+
+	#network IO buffers
+        self.buffers = {
+            'bytes_sent': 0,
+            'bytes_recv': 0,
+            'packets_sent': 0,
+            'packets_recv': 0,
+            'errin' : 0,
+            'errout' : 0,
+            'dropin': 0,
+            'dropout': 0,
+            'read_count': 0,
+            'write_count': 0,
+            'read_bytes': 0,
+            'write_bytes': 0,
+            'read_time': 0,
+            'write_time': 0,
+            'sin': 0,
+            'sout': 0,
+        }
 
         try:
             config_file = os.path.expanduser('~/.newrelic')
@@ -107,7 +129,9 @@ class NewRHELic:
 
         for i in range(0,len(io)-1):
             title = "Component/Network/IO/%s[bytes]" % io._fields[i]
-            self.metric_data[title] = io[i]
+            val = io[i] - self.buffers[io._fields[i]]
+            self.buffers[io._fields[i]] = io[i]
+            self.metric_data[title] = val
 
     def _get_cpu_states(self):
         '''This will get CPU states as a percentage of time'''
@@ -148,11 +172,17 @@ class NewRHELic:
         for i in range(0,len(d)-1):
             if d._fields[i] == 'read_time' or d._fields[i] == 'write_time':         #statistics come in multiple units from this output
                 title = "Component/Disk/Read-Write Time/%s[ms]" % d._fields[i]
+                val = d[i]
             elif d._fields[i] == 'read_count' or d._fields[i] == 'write_count':
                 title = "Component/Disk/Read-Write Count/%s[integer]" % d._fields[i]
+                val = d[i] - self.buffers[d._fields[i]]
+                self.buffers[d._fields[i]] = d[i]
             else:
                 title = "Component/Disk/IO/%s[bytes]" % d._fields[i]
-            self.metric_data[title] = d[i]
+                val = d[i] - self.buffers[d._fields[i]]
+                self.buffers[d._fields[i]] = d[i]
+
+            self.metric_data[title] = val
 
     def _get_mem_stats(self):
         '''this will return memory utilization statistics'''
@@ -171,10 +201,16 @@ class NewRHELic:
         for i in range(0, len(swap)-1):
             if swap._fields[i] == 'percent':
                 title = "Component/Swap/Utilzation/%s[percent]" % swap._fields[i]
+                val = swap[i]
+            elif swap._fields[i] == 'sin' or swap._fields[i] == 'sout':
+                title = "Component/Swap/IO/%s[bytes]" % swap._fields[i]
+                val = swap[i] - self.buffers[swap._fields[i]]
+                self.buffers[swap._fields[i]] = swap[i] 
             else:
                 title = "Component/Swap/IO/%s[bytes]" % swap._fields[i]
+                val = swap[i]
 
-            self.metric_data[title] = swap[i]
+            self.metric_data[title] = val
 
     def _build_agent_stanza(self):
         '''this will build the 'agent' stanza of the new relic json call'''
@@ -220,8 +256,36 @@ class NewRHELic:
 
         self.json_data['components'] = c_list
 
+    def _prep_first_run(self):
+        '''this will prime the needed buffers to present valid data when math is needed'''
+
+        #create the first counter values to do math against for network, disk and swap
+        net_io = psutil.net_io_counters()
+        for i in range(0,len(net_io)-1):
+            self.buffers[net_io._fields[i]] = net_io[i]
+
+        disk_io = psutil.disk_io_counters()
+        for i in range(0,len(disk_io)-1):
+            self.buffers[disk_io._fields[i]] = disk_io[i]
+
+        swap_io = psutil.swap_memory()
+        for i in range(0,len(swap_io)-1):
+            if swap_io._fields[i] == 'sin' or swap_io._fields[i] == 'sout':
+                self.buffers[swap_io._fields[i]] = swap_io[i]
+
+        #then we sleep so the math represents 1 minute intervals when we do it next
+        time.sleep(60)
+        self.first_run = False
+        if self.debug:
+            print "The pump is primed"
+
+        return True
+
     def add_to_newrelic(self):
         '''this will glue it all together into a json request and execute'''
+        if self.first_run:
+            self._prep_first_run()  #prime the data buffers if it's the first loop
+
         self._build_component_stanza()  #get the data added up
         try:
             response = urllib2.urlopen(self.req, json.dumps(self.json_data))
