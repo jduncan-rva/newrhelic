@@ -62,8 +62,6 @@ _TCP_STATES_TABLE = {_psutil_osx.TCPS_ESTABLISHED : CONN_ESTABLISHED,
 # --- functions
 
 get_system_boot_time = _psutil_osx.get_system_boot_time
-# ...so that we can test it from test_memory_leask.py
-get_num_cpus = _psutil_osx.get_num_cpus()
 
 nt_virtmem_info = namedtuple('vmem', ' '.join([
     # all platforms
@@ -309,8 +307,9 @@ class Process(object):
     @wrap_exceptions
     def get_process_status(self):
         code = _psutil_osx.get_process_status(self.pid)
-        # XXX is '?' legit? (we're not supposed to return it anyway)
-        return _status_map.get(code, '?')
+        if code in _status_map:
+            return _status_map[code]
+        return constant(-1, "?")
 
     @wrap_exceptions
     def get_process_threads(self):

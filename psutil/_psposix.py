@@ -8,11 +8,11 @@
 
 import os
 import errno
+import psutil
 import sys
 import time
 import glob
 
-from psutil._compat import PY3, unicode
 from psutil._error import TimeoutExpired
 from psutil._common import nt_diskinfo, usage_percent, memoize
 
@@ -24,19 +24,8 @@ def pid_exists(pid):
     try:
         os.kill(pid, 0)
     except OSError:
-        err = sys.exc_info()[1]
-        if err.errno == errno.ESRCH:
-            # ESRCH == No such process
-            return False
-        elif err.errno == errno.EPERM:
-            # EPERM clearly means there's a process to deny access to
-            return True
-        else:
-            # According to "man 2 kill" possible error values are
-            # (EINVAL, EPERM, ESRCH) therefore we should bever get
-            # here. If we do let's be explicit in considering this
-            # an error.
-            raise err
+        e = sys.exc_info()[1]
+        return e.errno == errno.EPERM
     else:
         return True
 
@@ -107,21 +96,7 @@ def wait_pid(pid, timeout=None):
 
 def get_disk_usage(path):
     """Return disk usage associated with path."""
-    try:
-        st = os.statvfs(path)
-    except UnicodeEncodeError:
-        if not PY3 and isinstance(path, unicode):
-            # this is a bug with os.statvfs() and unicode on
-            # Python 2, see:
-            # - https://code.google.com/p/psutil/issues/detail?id=416
-            # - http://bugs.python.org/issue18695
-            try:
-                path = path.encode(sys.getfilesystemencoding())
-            except UnicodeEncodeError:
-                pass
-            st = os.statvfs(path)
-        else:
-            raise
+    st = os.statvfs(path)
     free = (st.f_bavail * st.f_frsize)
     total = (st.f_blocks * st.f_frsize)
     used = (st.f_blocks - st.f_bfree) * st.f_frsize

@@ -25,20 +25,12 @@ if PY3:
     int = int
     long = int
     xrange = range
-    unicode = str
     exec_ = getattr(__builtin__, "exec")
     print_ = getattr(__builtin__, "print")
-
-    def u(s):
-        return s
 else:
     int = int
     long = long
     xrange = xrange
-    unicode = unicode
-
-    def u(s):
-        return unicode(s, "unicode_escape")
 
     def exec_(code, globs=None, locs=None):
         if globs is None:
@@ -96,7 +88,7 @@ except ImportError:
                 if (not min(c.isalnum() or c=='_' for c in name) or _iskeyword(name)
                     or not name or name[0].isdigit() or name.startswith('_')
                     or name in seen):
-                    names[i] = '_%d' % i
+                        names[i] = '_%d' % i
                 seen.add(name)
             field_names = tuple(names)
         for name in (typename,) + field_names:

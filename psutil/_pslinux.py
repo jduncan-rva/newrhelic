@@ -22,7 +22,6 @@ import _psutil_linux
 from psutil import _psposix
 from psutil._error import AccessDenied, NoSuchProcess, TimeoutExpired
 from psutil._common import *
-from _psutil_linux import *  # needed for RLIMIT_* constants
 from psutil._compat import PY3, xrange, long, namedtuple, wraps
 
 __extra__all__ = [
@@ -36,13 +35,6 @@ __extra__all__ = [
     # other
     "phymem_buffers", "cached_phymem"]
 
-HAS_PRLIMIT = hasattr(_psutil_linux, "prlimit")
-
-# RLIMIT_* constants, not guaranteed to be present on all kernels
-if HAS_PRLIMIT:
-    for name in dir(_psutil_linux):
-        if name.startswith('RLIM'):
-            __extra__all__.append(name)
 
 def get_system_boot_time():
     """Return the system boot time expressed in seconds since the epoch."""
@@ -55,7 +47,7 @@ def get_system_boot_time():
     finally:
         f.close()
 
-def get_num_cpus():
+def _get_num_cpus():
     """Return the number of CPUs on the system"""
     try:
         return os.sysconf("SC_NPROCESSORS_ONLN")
@@ -105,7 +97,7 @@ except Exception:
     BOOT_TIME = None
     warnings.warn("couldn't determine platform's BOOT_TIME", RuntimeWarning)
 try:
-    NUM_CPUS = get_num_cpus()
+    NUM_CPUS = _get_num_cpus()
 except Exception:
     NUM_CPUS = None
     warnings.warn("couldn't determine platform's NUM_CPUS", RuntimeWarning)
@@ -354,14 +346,14 @@ def net_io_counters():
 
     retdict = {}
     for line in lines[2:]:
-        colon = line.rfind(':')
-        assert colon > 0, repr(line)
+        colon = line.find(':')
+        assert colon > 0, line
         name = line[:colon].strip()
         fields = line[colon+1:].strip().split()
         bytes_recv = int(fields[0])
         packets_recv = int(fields[1])
         errin = int(fields[2])
-        dropin = int(fields[3])
+        dropin = int(fields[2])
         bytes_sent = int(fields[8])
         packets_sent = int(fields[9])
         errout = int(fields[10])
@@ -527,30 +519,24 @@ class Process(object):
         except KeyError:
             return None
 
-    if os.path.exists('/proc/%s/io' % os.getpid()):
-        @wrap_exceptions
-        def get_process_io_counters(self):
-            fname = "/proc/%s/io" % self.pid
-            f = open(fname)
-            try:
-                rcount = wcount = rbytes = wbytes = None
-                for line in f:
-                    if rcount is None and line.startswith("syscr"):
-                        rcount = int(line.split()[1])
-                    elif wcount is None and line.startswith("syscw"):
-                        wcount = int(line.split()[1])
-                    elif rbytes is None and line.startswith("read_bytes"):
-                        rbytes = int(line.split()[1])
-                    elif wbytes is None and line.startswith("write_bytes"):
-                        wbytes = int(line.split()[1])
-                for x in (rcount, wcount, rbytes, wbytes):
-                    if x is None:
-                        raise NotImplementedError(
-                            "couldn't read all necessary info from %r" % fname)
-                return nt_io(rcount, wcount, rbytes, wbytes)
-            finally:
-                f.close()
-    else:
+    @wrap_exceptions
+    def get_process_io_counters(self):
+        f = open("/proc/%s/io" % self.pid)
+        try:
+            for line in f:
+                if line.startswith("rchar"):
+                    read_count = int(line.split()[1])
+                elif line.startswith("wchar"):
+                    write_count = int(line.split()[1])
+                elif line.startswith("read_bytes"):
+                    read_bytes = int(line.split()[1])
+                elif line.startswith("write_bytes"):
+                    write_bytes = int(line.split()[1])
+            return nt_io(read_count, write_count, read_bytes, write_bytes)
+        finally:
+            f.close()
+
+    if not os.path.exists('/proc/%s/io' % os.getpid()):
         def get_process_io_counters(self):
             raise NotImplementedError("couldn't find /proc/%s/io (kernel " \
                                       "too old?)" % self.pid)
@@ -855,19 +841,6 @@ class Process(object):
                 raise ValueError("value argument range expected is between 0 and 8")
             return _psutil_linux.ioprio_set(self.pid, ioclass, value)
 
-    if HAS_PRLIMIT:
-        @wrap_exceptions
-        def process_rlimit(self, resource, limits=None):
-            if limits is None:
-                # get
-                return _psutil_linux.prlimit(self.pid, resource)
-            else:
-                # set
-                if len(limits) != 2:
-                    raise ValueError("second argument must be a (soft, hard) tuple")
-                soft, hard = limits
-                _psutil_linux.prlimit(self.pid, resource, soft, hard)
-
     @wrap_exceptions
     def get_process_status(self):
         f = open("/proc/%s/status" % self.pid)
@@ -875,9 +848,9 @@ class Process(object):
             for line in f:
                 if line.startswith("State:"):
                     letter = line.split()[1]
-                    # XXX is '?' legit? (we're not supposed to return
-                    # it anyway)
-                    return _status_map.get(letter, '?')
+                    if letter in _status_map:
+                        return _status_map[letter]
+                    return constant(-1, '?')
         finally:
             f.close()
 
@@ -1030,7 +1003,7 @@ class Process(object):
 
     @wrap_exceptions
     def get_num_fds(self):
-        return len(os.listdir("/proc/%s/fd" % self.pid))
+       return len(os.listdir("/proc/%s/fd" % self.pid))
 
     @wrap_exceptions
     def get_process_ppid(self):

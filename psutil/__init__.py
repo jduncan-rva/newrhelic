@@ -12,7 +12,7 @@ Python.
 
 from __future__ import division
 
-__version__ = "1.1.2"
+__version__ = "1.0.1"
 version_info = tuple([int(num) for num in __version__.split('.')])
 
 __all__ = [
@@ -52,85 +52,34 @@ except ImportError:
 
 from psutil._error import Error, NoSuchProcess, AccessDenied, TimeoutExpired
 from psutil._common import cached_property
-from psutil._compat import property, callable, defaultdict, namedtuple
-from psutil._compat import (wraps as _wraps,
-                            PY3 as _PY3)
+from psutil._compat import (property, callable, defaultdict, namedtuple,
+                            wraps as _wraps, PY3 as _PY3)
 from psutil._common import (deprecated as _deprecated,
                             nt_disk_iostat as _nt_disk_iostat,
                             nt_net_iostat as _nt_net_iostat,
                             nt_sysmeminfo as _nt_sysmeminfo,
                             isfile_strict as _isfile_strict)
+from psutil._common import (STATUS_RUNNING, STATUS_IDLE, STATUS_SLEEPING,
+                            STATUS_DISK_SLEEP, STATUS_STOPPED,
+                            STATUS_TRACING_STOP, STATUS_ZOMBIE, STATUS_DEAD,
+                            STATUS_WAKING, STATUS_LOCKED,
+                            #
+                            CONN_ESTABLISHED, CONN_SYN_SENT, CONN_SYN_RECV,
+                            CONN_FIN_WAIT1, CONN_FIN_WAIT2, CONN_TIME_WAIT,
+                            CONN_CLOSE, CONN_CLOSE_WAIT, CONN_LAST_ACK,
+                            CONN_LISTEN, CONN_CLOSING, CONN_NONE)
 
-from psutil._common import (STATUS_RUNNING,
-                            STATUS_IDLE,
-                            STATUS_SLEEPING,
-                            STATUS_DISK_SLEEP,
-                            STATUS_STOPPED,
-                            STATUS_TRACING_STOP,
-                            STATUS_ZOMBIE,
-                            STATUS_DEAD,
-                            STATUS_WAKING,
-                            STATUS_LOCKED)
-
-from psutil._common import (CONN_ESTABLISHED,
-                            CONN_SYN_SENT,
-                            CONN_SYN_RECV,
-                            CONN_FIN_WAIT1,
-                            CONN_FIN_WAIT2,
-                            CONN_TIME_WAIT,
-                            CONN_CLOSE,
-                            CONN_CLOSE_WAIT,
-                            CONN_LAST_ACK,
-                            CONN_LISTEN,
-                            CONN_CLOSING,
-                            CONN_NONE)
-
+# import the appropriate module for our platform only
 if sys.platform.startswith("linux"):
     import psutil._pslinux as _psplatform
     from psutil._pslinux import (phymem_buffers,
-                                 cached_phymem)
-
-    from psutil._pslinux import (IOPRIO_CLASS_NONE,
+                                 cached_phymem,
+                                 IOPRIO_CLASS_NONE,
                                  IOPRIO_CLASS_RT,
                                  IOPRIO_CLASS_BE,
                                  IOPRIO_CLASS_IDLE)
-    # Linux >= 2.6.36
-    if _psplatform.HAS_PRLIMIT:
-        from psutil._pslinux import (RLIM_INFINITY,
-                                     RLIMIT_AS,
-                                     RLIMIT_CORE,
-                                     RLIMIT_CPU,
-                                     RLIMIT_DATA,
-                                     RLIMIT_FSIZE,
-                                     RLIMIT_LOCKS,
-                                     RLIMIT_MEMLOCK,
-                                     RLIMIT_NOFILE,
-                                     RLIMIT_NPROC,
-                                     RLIMIT_RSS,
-                                     RLIMIT_STACK)
-        # Kinda ugly but considerably faster than using hasattr() and
-        # setattr() against the module object (we are at import time
-        # and we demand speed).
-        try:
-            RLIMIT_MSGQUEUE = _psplatform.RLIMIT_MSGQUEUE
-        except AttributeError:
-            pass
-        try:
-            RLIMIT_NICE = _psplatform.RLIMIT_NICE
-        except AttributeError:
-            pass
-        try:
-            RLIMIT_RTPRIO = _psplatform.RLIMIT_RTPRIO
-        except AttributeError:
-            pass
-        try:
-            RLIMIT_RTTIME = _psplatform.RLIMIT_RTTIME
-        except AttributeError:
-            pass
-        try:
-            RLIMIT_SIGPENDING = _psplatform.RLIMIT_SIGPENDING
-        except AttributeError:
-            pass
+    phymem_buffers = _psplatform.phymem_buffers
+    cached_phymem = _psplatform.cached_phymem
 
 elif sys.platform.startswith("win32"):
     import psutil._psmswindows as _psplatform
@@ -183,7 +132,7 @@ class Process(object):
         Raises NoSuchProcess if pid does not exist.
 
         Note that most of the methods of this class do not make sure
-        the PID of the process being queried has been reused over time.
+        the PID of the process being queried has been reused.
         That means you might end up retrieving an information referring
         to another process in case the original one this instance
         refers to is gone in the meantime.
@@ -193,7 +142,6 @@ class Process(object):
          - parent
          - get_children()
          - set_nice()
-         - set_rlimit()
          - suspend()
          - resume()
          - send_signal()
@@ -259,7 +207,7 @@ class Process(object):
         """
         excluded_names = set(['send_signal', 'suspend', 'resume', 'terminate',
                               'kill', 'wait', 'is_running', 'as_dict', 'parent',
-                              'get_children', 'nice', 'get_rlimit'])
+                              'get_children', 'nice'])
         retdict = dict()
         for name in set(attrs or dir(self)):
             if name.startswith('_'):
@@ -339,7 +287,7 @@ class Process(object):
     def name(self):
         """The process name."""
         name = self._platform_impl.get_process_name()
-        if os.name == 'posix' and len(name) >= 15:
+        if os.name == 'posix':
             # On UNIX the name gets truncated to the first 15 characters.
             # If it matches the first part of the cmdline we return that
             # one instead because it's usually more explicative.
@@ -471,7 +419,7 @@ class Process(object):
         whether PID has been reused."""
         return self._platform_impl.set_process_nice(value)
 
-    # Linux and Windows >= Vista only
+    # available only on Linux and Windows >= Vista
     if hasattr(_psplatform.Process, "get_process_ionice"):
 
         def get_ionice(self):
@@ -499,39 +447,7 @@ class Process(object):
             """
             return self._platform_impl.set_process_ionice(ioclass, value)
 
-    # Linux only
-    if hasattr(_psplatform.Process, "process_rlimit"):
-
-        def get_rlimit(self, resource):
-            """Get process resource limits as a (soft, hard) tuple.
-
-            'resource' is one of the RLIMIT_* constants.
-
-            See "man prlimit" for further info.
-            """
-            # if pid is 0 prlimit() applies to the calling process and
-            # we don't want that
-            if self.pid == 0:
-                raise ValueError("can't use this method for PID 0 process")
-            return self._platform_impl.process_rlimit(resource)
-
-        @_assert_pid_not_reused
-        def set_rlimit(self, resource, limits):
-            """Set process resource limits pre-emptively checking
-            whether PID has been reused.
-
-            'resource' is one of the RLIMIT_* constants.
-            'limits' is supposed to be a (soft, hard) tuple.
-
-            See "man prlimit" for further info.
-            """
-            # if pid is 0 prlimit() applies to the calling process and
-            # we don't want that
-            if self.pid == 0:
-                raise ValueError("can't use this method for PID 0 process")
-            self._platform_impl.process_rlimit(resource, limits)
-
-    # Windows and Linux only
+    # available on Windows and Linux only
     if hasattr(_psplatform.Process, "get_process_cpu_affinity"):
 
         def get_cpu_affinity(self):
@@ -602,55 +518,26 @@ class Process(object):
         process Y won't be returned either as the reference to
         process A is lost.
         """
-        if hasattr(_psplatform, 'get_ppid_map'):
-            # Windows only: obtain a {pid:ppid, ...} dict for all running
-            # processes in one shot (faster).
-            ppid_map = _psplatform.get_ppid_map()
-        else:
-            ppid_map = None
-
         ret = []
         if not recursive:
-            if ppid_map is None:
-                # 'slow' version, common to all platforms except Windows
-                for p in process_iter():
-                    try:
-                        if p.ppid == self.pid:
-                            # if child happens to be older than its parent
-                            # (self) it means child's PID has been reused
-                            if self.create_time <= p.create_time:
-                                ret.append(p)
-                    except NoSuchProcess:
-                        pass
-            else:
-                # Windows only (faster)
-                for pid, ppid in ppid_map.items():
-                    if ppid == self.pid:
-                        try:
-                            child = Process(pid)
-                            # if child happens to be older than its parent
-                            # (self) it means child's PID has been reused
-                            if self.create_time <= child.create_time:
-                                ret.append(child)
-                        except NoSuchProcess:
-                            pass
+            for p in process_iter():
+                try:
+                    if p.ppid == self.pid:
+                        # if child happens to be older than its parent
+                        # (self) it means child's PID has been reused
+                        if self.create_time <= p.create_time:
+                            ret.append(p)
+                except NoSuchProcess:
+                    pass
         else:
             # construct a dict where 'values' are all the processes
             # having 'key' as their parent
             table = defaultdict(list)
-            if ppid_map is None:
-                for p in process_iter():
-                    try:
-                        table[p.ppid].append(p)
-                    except NoSuchProcess:
-                        pass
-            else:
-                for pid, ppid in ppid_map.items():
-                    try:
-                        p = Process(pid)
-                        table[ppid].append(p)
-                    except NoSuchProcess:
-                        pass
+            for p in process_iter():
+                try:
+                    table[p.ppid].append(p)
+                except NoSuchProcess:
+                    pass
             # At this point we have a mapping table where table[self.pid]
             # are the current process's children.
             # Below, we look for all descendants recursively, similarly
@@ -910,12 +797,6 @@ class Process(object):
     def wait(self, timeout=None):
         """Wait for process to terminate and, if process is a children
         of the current one also return its exit code, else None.
-
-        If the process is already terminated immediately return None
-        instead of raising NoSuchProcess.
-
-        If timeout (in seconds) is specified and process is still alive
-        after the timeout expired raise TimeoutExpired.
         """
         if timeout is not None and not timeout >= 0:
             raise ValueError("timeout must be a positive integer")
@@ -1058,7 +939,6 @@ def process_iter():
             # has been reused. Just return the cached version.
             yield proc
 
-
 # =====================================================================
 # --- CPU related functions
 # =====================================================================
@@ -1192,7 +1072,6 @@ def cpu_times_percent(interval=0.1, percpu=False):
     global _last_cpu_times_2
     global _last_per_cpu_times_2
     blocking = interval is not None and interval > 0.0
-    WINDOWS = os.name == 'nt'
 
     def calculate(t1, t2):
         global _ptime_cpu_perc_nt
@@ -1204,25 +1083,7 @@ def cpu_times_percent(interval=0.1, percpu=False):
                 field_perc = (100 * field_delta) / all_delta
             except ZeroDivisionError:
                 field_perc = 0.0
-            field_perc = round(field_perc, 1)
-            if WINDOWS:
-                # XXX
-                # Work around:
-                # https://code.google.com/p/psutil/issues/detail?id=392
-                # CPU times are always supposed to increase over time
-                # or at least remain the same and that's because time
-                # cannot go backwards.
-                # Surprisingly sometimes this might not be the case on
-                # Windows where 'system' CPU time can be smaller
-                # compared to the previous call, resulting in corrupted
-                # percentages (< 0 or > 100).
-                # I really don't know what to do about that except
-                # forcing the value to 0 or 100.
-                if field_perc > 100.0:
-                    field_perc = 100.0
-                elif field_perc < 0.0:
-                    field_perc = 0.0
-            nums.append(field_perc)
+            nums.append(round(field_perc, 1))
         if _ptime_cpu_perc_nt is None:
             _ptime_cpu_perc_nt = namedtuple('cpupercent', ' '.join(t1._fields))
         return _ptime_cpu_perc_nt(*nums)

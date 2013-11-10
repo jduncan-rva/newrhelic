@@ -8,6 +8,7 @@
 
 import errno
 import os
+import struct
 import subprocess
 import socket
 
@@ -26,8 +27,8 @@ NUM_CPUS = os.sysconf("SC_NPROCESSORS_ONLN")
 BOOT_TIME = _psutil_sunos.get_process_basic_info(0)[3]
 TOTAL_PHYMEM = os.sysconf('SC_PHYS_PAGES') * PAGE_SIZE
 
-CONN_IDLE = "IDLE"
-CONN_BOUND = "BOUND"
+CONN_IDLE = constant(11, "IDLE")
+CONN_BOUND = constant(12, "BOUND")
 
 _PAGESIZE = os.sysconf("SC_PAGE_SIZE")
 _cputimes_ntuple = namedtuple('cputimes', 'user system idle iowait')
@@ -63,7 +64,7 @@ def swap_memory():
     if PY3:
         stdout = stdout.decode(sys.stdout.encoding)
     if p.returncode != 0:
-        raise RuntimeError("'swap -l -k' failed (retcode=%s)" % p.returncode)
+        raise RuntimeError("'swap -l -k' failed (retcode=%s)" % retcode)
 
     lines = stdout.strip().split('\n')[1:]
     if not lines:
@@ -311,8 +312,9 @@ class Process(object):
     @wrap_exceptions
     def get_process_status(self):
         code = _psutil_sunos.get_process_basic_info(self.pid)[6]
-        # XXX is '?' legit? (we're not supposed to return it anyway)
-        return _status_map.get(code, '?')
+        if code in _status_map:
+            return _status_map[code]
+        return constant(-1, "?")
 
     @wrap_exceptions
     def get_process_threads(self):

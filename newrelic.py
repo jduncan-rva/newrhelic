@@ -79,24 +79,6 @@ class NewRHELic:
                 self.enable_proc = config.getboolean('plugin', 'enable_proc')
                 self.enable_swap = config.getboolean('plugin', 'enable_swap')
 
-            if self.enable_disk:
-                self.disk_title = config.get('disk','title')
-
-            if self.enable_net:
-                self.net_title = config.get('network','title')
-                self.net_interfaces = config.get('network','interfaces').split(',') #split them into a tuple so they can be evaluated
-
-            if self.enable_mem:
-                self.mem_title = config.get('memory','title')
-
-            if self.enable_proc:
-                self.proc_title = config.get('proc','title')
-                self.proc_cpu_time_title = config.get('proc','cpu_time_title')
-                self.proc_util_title = config.get('proc','cpu_util_title')
-
-            if self.enable_swap:
-                self.swap_title = config.get('swap','title')
-
             self._build_agent_stanza()
 
         except:
@@ -111,7 +93,8 @@ class NewRHELic:
         return boottime
 
     def _get_sys_info(self):
-        '''This will populate some basic system information'''
+        '''This will populate some basic system information
+	### THIS IS CURRENLTLY NOT SUPPORTED BY NEW RELIC ###'''
 
         self.metric_data['/Component/System Information/Kernel[string]'] = self.kernel
         self.metric_data['/Component/System Information/Arch[string]'] = self.arch
@@ -120,10 +103,10 @@ class NewRHELic:
 
     def _get_net_stats(self):
         '''This will form network IO stats for the entire system'''
-        io = psutil.network_io_counters()
+        io = psutil.net_io_counters()
 
         for i in range(0,len(io)-1):
-            title = "Component/%s/%s[bytes]" % (self.mem_title, io._fields[i])
+            title = "Component/Network/IO/%s[bytes]" % io._fields[i]
             self.metric_data[title] = io[i]
 
     def _get_cpu_states(self):
@@ -131,7 +114,7 @@ class NewRHELic:
         cpu_states = psutil.cpu_times_percent()
 
         for i in range(0, len(cpu_states)-1):
-            title = "Component/%s/%s[percent]" % (self.proc_cpu_time_title, cpu_states._fields[i])
+            title = "Component/CPU/State Time/%s[percent]" % cpu_states._fields[i]
             self.metric_data[title] = cpu_states[i]
 
     def _get_cpu_utilization(self):
@@ -139,22 +122,22 @@ class NewRHELic:
         cpu_util = psutil.cpu_percent(interval=0, percpu=True)
 
         for i in range(0, len(cpu_util)-1):
-            title = "Component/%s/CPU%s[percent]" % (self.proc_util_title, i)
+            title = "Component/CPU/Utilization/Processor-%s[percent]" % i
             self.metric_data[title] = cpu_util[i]
 
     def _get_cpu_load(self):
         '''returns the 1/5/15 minute load averages'''
         l = os.getloadavg()
 
-        self.metric_data['Component/CPU Load-1min[avg]'] = l[0]
-        self.metric_data['Component/CPU Load-5min[avg]'] = l[1]
-        self.metric_data['Component/CPU Load-15min[avg]'] = l[2]
+        self.metric_data['Component/CPU/Load/1min[avg]'] = l[0]
+        self.metric_data['Component/CPU/Load/5min[avg]'] = l[1]
+        self.metric_data['Component/CPU/Load/15min[avg]'] = l[2]
 
     def _get_disk_utilization(self):
         '''This will return disk utilziation percentage for each mountpoint'''
         disks = psutil.disk_partitions() #all of the various partitions / volumes on a device
         for p in disks:
-            title = "Component/%s/%s[percent]" % (self.disk_title, p.mountpoint.replace('/','root-'))
+            title = "Component/Disk/Utilization/%s[percent]" % p.mountpoint.replace('/','|')
             x = psutil.disk_usage(p.mountpoint)
             self.metric_data[title] = x.percent
 
@@ -164,11 +147,11 @@ class NewRHELic:
 
         for i in range(0,len(d)-1):
             if d._fields[i] == 'read_time' or d._fields[i] == 'write_time':         #statistics come in multiple units from this output
-                title = "Component/Utilzation/%s/%s[ms]" % (self.disk_title, d._fields[i])
+                title = "Component/Disk/Read-Write Time/%s[ms]" % d._fields[i]
             elif d._fields[i] == 'read_count' or d._fields[i] == 'write_count':
-                title = "Component/IO-Count/%s/%s[integer]" % (self.disk_title, d._fields[i])
+                title = "Component/Disk/Read-Write Count/%s[integer]" % d._fields[i]
             else:
-                title = "Component/IO-Bytes/%s/%s[bytes]" % (self.disk_title, d._fields[i])
+                title = "Component/Disk/IO/%s[bytes]" % d._fields[i]
             self.metric_data[title] = d[i]
 
     def _get_mem_stats(self):
@@ -176,9 +159,9 @@ class NewRHELic:
         mem = psutil.virtual_memory()
         for i in range(0, len(mem)-1):
             if mem._fields[i] == 'percent':
-                title = "Component/Utilization/%s/%s[percent]" % (self.mem_title, mem._fields[i])
+                title = "Component/Memory/Utilization/%s[percent]" % mem._fields[i]
             else:
-                title = "Component/IO/%s/%s[bytes]" % (self.mem_title, mem._fields[i])
+                title = "Component/Memory/IO/%s[bytes]" % mem._fields[i]
 
             self.metric_data[title] = mem[i]
 
@@ -187,9 +170,9 @@ class NewRHELic:
         swap = psutil.swap_memory()
         for i in range(0, len(swap)-1):
             if swap._fields[i] == 'percent':
-                title = "Component/Utilzation/%s/%s[percent]" % (self.swap_title, swap._fields[i])
+                title = "Component/Swap/Utilzation/%s[percent]" % swap._fields[i]
             else:
-                title = "Component/IO/%s/%s[bytes]" % (self.swap_title, swap._fields[i])
+                title = "Component/Swap/IO/%s[bytes]" % swap._fields[i]
 
             self.metric_data[title] = swap[i]
 
@@ -216,7 +199,7 @@ class NewRHELic:
         c_dict['duration'] = self.duration
 
         #always get the sys information
-        self._get_sys_info()
+        #self._get_sys_info()
 
         if self.enable_disk:
             self._get_disk_utilization()

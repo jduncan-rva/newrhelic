@@ -45,8 +45,6 @@ except Exception:
 
 _PAGESIZE = os.sysconf("SC_PAGE_SIZE")
 _cputimes_ntuple = namedtuple('cputimes', 'user nice system idle irq')
-# ...so that we can test it from test_memory_leask.py
-get_num_cpus = _psutil_bsd.get_num_cpus()
 
 # --- public functions
 
@@ -343,8 +341,7 @@ class Process(object):
         code = _psutil_bsd.get_process_status(self.pid)
         if code in _status_map:
             return _status_map[code]
-        # XXX is this legit? will we even ever get here?
-        return "?"
+        return constant(-1, "?")
 
     @wrap_exceptions
     def get_process_io_counters(self):

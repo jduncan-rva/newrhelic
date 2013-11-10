@@ -9,13 +9,14 @@
 import errno
 import os
 import sys
+import platform
 import warnings
 
 import _psutil_mswindows
 from _psutil_mswindows import ERROR_ACCESS_DENIED
 from psutil._error import AccessDenied, NoSuchProcess, TimeoutExpired
 from psutil._common import *
-from psutil._compat import PY3, xrange, wraps
+from psutil._compat import PY3, xrange, long, wraps
 
 # Windows specific extended namespace
 __extra__all__ = ["ABOVE_NORMAL_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS",
@@ -48,7 +49,7 @@ except Exception:
     TOTAL_PHYMEM = None
     warnings.warn("couldn't determine platform's TOTAL_PHYMEM", RuntimeWarning)
 
-CONN_DELETE_TCB = "DELETE_TCB"
+CONN_DELETE_TCB = constant(11, "DELETE_TCB")
 WAIT_TIMEOUT = 0x00000102 # 258 in decimal
 ACCESS_DENIED_SET = frozenset([errno.EPERM, errno.EACCES, ERROR_ACCESS_DENIED])
 TCP_STATES_TABLE = {
@@ -96,9 +97,6 @@ def _convert_raw_path(s):
 # --- public functions
 
 get_system_boot_time = _psutil_mswindows.get_system_boot_time
-# ...so that we can test it from test_memory_leask.py
-get_num_cpus = _psutil_mswindows.get_num_cpus()
-
 
 nt_virtmem_info = namedtuple('vmem', ' '.join([
     # all platforms
@@ -130,6 +128,7 @@ def get_disk_usage(path):
     try:
         total, free = _psutil_mswindows.get_disk_usage(path)
     except WindowsError:
+        err = sys.exc_info()[1]
         if not os.path.exists(path):
             raise OSError(errno.ENOENT, "No such file or directory: '%s'" % path)
         raise
@@ -147,13 +146,18 @@ _cputimes_ntuple = namedtuple('cputimes', 'user system idle')
 
 def get_system_cpu_times():
     """Return system CPU times as a named tuple."""
-    user, system, idle = _psutil_mswindows.get_system_cpu_times()
+    user, system, idle = 0, 0, 0
+    # computes system global times summing each processor value
+    for cpu_time in _psutil_mswindows.get_system_cpu_times():
+        user += cpu_time[0]
+        system += cpu_time[1]
+        idle += cpu_time[2]
     return _cputimes_ntuple(user, system, idle)
 
 def get_system_per_cpu_times():
     """Return system per-CPU times as a list of named tuples."""
     ret = []
-    for cpu_t in _psutil_mswindows.get_system_per_cpu_times():
+    for cpu_t in _psutil_mswindows.get_system_cpu_times():
         user, system, idle = cpu_t
         item = _cputimes_ntuple(user, system, idle)
         ret.append(item)
@@ -169,14 +173,10 @@ def get_system_users():
         retlist.append(nt)
     return retlist
 
-
 get_pid_list = _psutil_mswindows.get_pid_list
 pid_exists = _psutil_mswindows.pid_exists
 net_io_counters = _psutil_mswindows.get_net_io_counters
 disk_io_counters = _psutil_mswindows.get_disk_io_counters
-get_ppid_map = _psutil_mswindows.get_ppid_map  # not meant to be public
-
-
 
 # --- decorator
 
@@ -209,17 +209,8 @@ class Process(object):
 
     @wrap_exceptions
     def get_process_name(self):
-        """Return process name, which on Windows is always the final
-        part of the executable.
-        """
-        # This is how PIDs 0 and 4 are always represented in taskmgr
-        # and process-hacker.
-        if self.pid == 0:
-            return "System Idle Process"
-        elif self.pid == 4:
-            return "System"
-        else:
-            return os.path.basename(self.get_process_exe())
+        """Return process name as a string of limited len (15)."""
+        return _psutil_mswindows.get_process_name(self.pid)
 
     @wrap_exceptions
     def get_process_exe(self):
@@ -233,12 +224,10 @@ class Process(object):
         """Return process cmdline as a list of arguments."""
         return _psutil_mswindows.get_process_cmdline(self.pid)
 
+    @wrap_exceptions
     def get_process_ppid(self):
         """Return process parent pid."""
-        try:
-            return get_ppid_map()[self.pid]
-        except KeyError:
-            raise NoSuchProcess(self.pid, self._process_name)
+        return _psutil_mswindows.get_process_ppid(self.pid)
 
     def _get_raw_meminfo(self):
         try:
