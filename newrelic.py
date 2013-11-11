@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sun 10 Nov 2013 09:13:47 PM EST
+# Last Modified : Mon 11 Nov 2013 06:18:00 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -29,6 +29,7 @@ import ConfigParser
 import os
 import sys
 import time
+from subprocess import Popen, PIPE
 
 class NewRHELic:
 
@@ -88,6 +89,7 @@ class NewRHELic:
                 self.enable_mem = True
                 self.enable_proc = True
                 self.enable_swap = True
+                self.enable_nfs = True
 
             else:
                 self.enable_disk = config.getboolean('plugin', 'enable_disk')
@@ -95,6 +97,7 @@ class NewRHELic:
                 self.enable_mem = config.getboolean('plugin', 'enable_memory')
                 self.enable_proc = config.getboolean('plugin', 'enable_proc')
                 self.enable_swap = config.getboolean('plugin', 'enable_swap')
+                self.enable_nfs = config.getboolean('plugin', 'enable_nfs')
 
             self._build_agent_stanza()
 
@@ -207,6 +210,56 @@ class NewRHELic:
 
             self.metric_data[title] = val
 
+    def _get_nfs_mounts(self):
+        '''this will return either a list of active NFS mounts, or False'''
+        p = Popen(['/etc/init.d/netfs', 'status'], stdout=PIPE, stderr=PIPE)
+        mnt_data = p.stdout.readlines()
+        for i in range(0, len(mnt_data)-1):
+            if 'Active NFS mountpoints' in mnt_data[i]: #if this exists, we remove it
+                mnt_data.pop(i)
+            mnt_data[i] = mnt_data[i].rstrip()
+        return mnt_data
+
+    def _get_nfs_info(self, volume):
+        '''this will add NFS stats for a given NFS mount to metric_data'''
+        p = Popen(['/usr/sbin/nfsiostat', '%s' % volume ], stdout=PIPE, stderr=PIPE)
+        retcode = p.wait()
+        statdict = []
+        volname = 'Component/NFS%s/' % volume
+        for i in iter(p.stdout.readline, ''):
+            statdict.append(i.rstrip('/').rstrip())
+        statdict.remove(statdict[0])
+
+        nfs_data = {
+            volname + 'Metrics/ops[sec]': statdict[3].split()[0],
+            volname + 'Metrics/rpcbklog[int]': statdict[3].split()[1],
+            volname + 'Read/ops[sec]': statdict[5].split()[0],
+            volname + 'Read/kb[sec]': statdict[5].split()[1],
+            volname + 'Read/ops[kb]': statdict[5].split()[2],
+            volname + 'Read/retrans[int]': statdict[5].split()[3],
+            volname + 'Time/Read/RTT/avg[ms]': statdict[5].split()[5],
+            volname + 'Time/Read/Execute Time/avg[ms]': statdict[5].split()[6],
+            volname + 'Write/writes[sec]': statdict[7].split()[0],
+            volname + 'Write/kb[sec]': statdict[7].split()[1],
+            volname + 'Write/ops[kb]': statdict[7].split()[2],
+            volname + 'Write/retrans[int]': statdict[7].split()[3],
+            volname + 'Time/Write/RTT/avg[ms]': statdict[7].split()[5],
+            volname + 'Time/Write/Execute Time/avg[ms]': statdict[7].split()[6],
+        }
+
+        for k,v in nfs_data.items():
+            self.metric_data[k] = v
+
+    def _get_nfs_stats(self):
+        '''this is called to iterate through all NFS mounts on a system and collate the data'''
+
+        mounts = self._get_nfs_mounts()
+        if mounts > 0:
+            for vol in mounts:
+                self._get_nfs_info(vol)
+                if self.debug:
+                    print "processing NFS volume - %s" % vol
+
     def _build_agent_stanza(self):
         '''this will build the 'agent' stanza of the new relic json call'''
         values = {}
@@ -246,6 +299,8 @@ class NewRHELic:
             self._get_net_stats()
         if self.enable_swap:
             self._get_swap_stats()
+        if self.enable_nfs:
+            self._get_nfs_stats()
 
         c_dict['metrics'] = self.metric_data
         c_list.append(c_dict)
