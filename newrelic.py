@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Mon 11 Nov 2013 06:18:00 PM EST
+# Last Modified : Mon 11 Nov 2013 06:28:43 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -231,20 +231,20 @@ class NewRHELic:
         statdict.remove(statdict[0])
 
         nfs_data = {
-            volname + 'Metrics/ops[sec]': statdict[3].split()[0],
-            volname + 'Metrics/rpcbklog[int]': statdict[3].split()[1],
-            volname + 'Read/ops[sec]': statdict[5].split()[0],
-            volname + 'Read/kb[sec]': statdict[5].split()[1],
-            volname + 'Read/ops[kb]': statdict[5].split()[2],
-            volname + 'Read/retrans[int]': statdict[5].split()[3],
-            volname + 'Time/Read/RTT/avg[ms]': statdict[5].split()[5],
-            volname + 'Time/Read/Execute Time/avg[ms]': statdict[5].split()[6],
-            volname + 'Write/writes[sec]': statdict[7].split()[0],
-            volname + 'Write/kb[sec]': statdict[7].split()[1],
-            volname + 'Write/ops[kb]': statdict[7].split()[2],
-            volname + 'Write/retrans[int]': statdict[7].split()[3],
-            volname + 'Time/Write/RTT/avg[ms]': statdict[7].split()[5],
-            volname + 'Time/Write/Execute Time/avg[ms]': statdict[7].split()[6],
+            volname + 'Metrics/ops[sec]': float(statdict[3].split()[0]),
+            volname + 'Metrics/rpcbklog[int]': float(statdict[3].split()[1]),
+            volname + 'Read/ops[sec]': float(statdict[5].split()[0]),
+            volname + 'Read/kb[sec]': float(statdict[5].split()[1]),
+            volname + 'Read/ops[kb]': float(statdict[5].split()[2]),
+            volname + 'Read/retrans[int]': int(statdict[5].split()[3]),
+            volname + 'Time/Read/RTT/avg[ms]': float(statdict[5].split()[5]),
+            volname + 'Time/Read/Execute Time/avg[ms]': float(statdict[5].split()[6]),
+            volname + 'Write/writes[sec]': float(statdict[7].split()[0]),
+            volname + 'Write/kb[sec]': float(statdict[7].split()[1]),
+            volname + 'Write/ops[kb]': float(statdict[7].split()[2]),
+            volname + 'Write/retrans[int]': int(statdict[7].split()[3]),
+            volname + 'Time/Write/RTT/avg[ms]': float(statdict[7].split()[5]),
+            volname + 'Time/Write/Execute Time/avg[ms]': float(statdict[7].split()[6]),
         }
 
         for k,v in nfs_data.items():
