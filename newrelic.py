@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sun 10 Nov 2013 08:36:50 PM EST
+# Last Modified : Sun 10 Nov 2013 09:13:47 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -218,6 +218,7 @@ class NewRHELic:
 
     def _reset_json_data(self):
         '''this will 'reset' the json data structure and prepare for the next call. It does this by mimicing what happens in __init__'''
+        self.metric_data = {}
         self.json_data = {}
         self._build_agent_stanza()
 
