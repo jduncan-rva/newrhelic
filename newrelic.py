@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Sun 10 Nov 2013 06:47:21 PM EST
+# Last Modified : Sun 10 Nov 2013 08:36:50 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -47,7 +47,7 @@ class NewRHELic:
 
         self.first_run = True   #this is set to False after the first run function is called
 
-	#network IO buffers
+	#Various IO buffers
         self.buffers = {
             'bytes_sent': 0,
             'bytes_recv': 0,
@@ -78,11 +78,6 @@ class NewRHELic:
             self.guid = config.get('plugin', 'guid')
             self.name = config.get('plugin', 'name')
             self.version = config.get('plugin','version')
-
-            self.req = urllib2.Request(self.api_url)
-            self.req.add_header("X-License-Key", self.license_key)
-            self.req.add_header("Content-Type","application/json")
-            self.req.add_header("Accept","application/json")
 
             #create a dictionary to hold the various data metrics.
             self.metric_data = {}
@@ -288,7 +283,11 @@ class NewRHELic:
 
         self._build_component_stanza()  #get the data added up
         try:
-            response = urllib2.urlopen(self.req, json.dumps(self.json_data))
+            req = urllib2.Request(self.api_url)
+            req.add_header("X-License-Key", self.license_key)
+            req.add_header("Content-Type","application/json")
+            req.add_header("Accept","application/json")
+            response = urllib2.urlopen(req, json.dumps(self.json_data))
             if self.debug:
                 print response.getcode()
                 print json.dumps(self.json_data)
