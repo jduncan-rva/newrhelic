@@ -28,7 +28,7 @@ from newrelic import NewRHELic
 
 class RunApp:
     def __init__(self):
-        self.data = NewRHELic(debug=True)
+        self.data = NewRHELic()
         self.stdin_path = '/dev/null'
         self.stdout_path = '/dev/tty'
         self.stderr_path = '/dev/tty'
