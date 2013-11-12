@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Mon 11 Nov 2013 06:28:43 PM EST
+# Last Modified : Mon 11 Nov 2013 07:17:46 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -125,7 +125,7 @@ class NewRHELic:
         '''This will form network IO stats for the entire system'''
         io = psutil.net_io_counters()
 
-        for i in range(0,len(io)-1):
+        for i in range(len(io)):
             title = "Component/Network/IO/%s[bytes]" % io._fields[i]
             val = io[i] - self.buffers[io._fields[i]]
             self.buffers[io._fields[i]] = io[i]
@@ -135,7 +135,7 @@ class NewRHELic:
         '''This will get CPU states as a percentage of time'''
         cpu_states = psutil.cpu_times_percent()
 
-        for i in range(0, len(cpu_states)-1):
+        for i in range(len(cpu_states)):
             title = "Component/CPU/State Time/%s[percent]" % cpu_states._fields[i]
             self.metric_data[title] = cpu_states[i]
 
@@ -143,7 +143,7 @@ class NewRHELic:
         '''This will return per-CPU utilization'''
         cpu_util = psutil.cpu_percent(interval=0, percpu=True)
 
-        for i in range(0, len(cpu_util)-1):
+        for i in range(len(cpu_util)):
             title = "Component/CPU/Utilization/Processor-%s[percent]" % i
             self.metric_data[title] = cpu_util[i]
 
@@ -167,7 +167,7 @@ class NewRHELic:
         '''this will show system-wide disk statistics'''
         d = psutil.disk_io_counters()
 
-        for i in range(0,len(d)-1):
+        for i in range(len(d)):
             if d._fields[i] == 'read_time' or d._fields[i] == 'write_time':         #statistics come in multiple units from this output
                 title = "Component/Disk/Read-Write Time/%s[ms]" % d._fields[i]
                 val = d[i]
@@ -185,7 +185,7 @@ class NewRHELic:
     def _get_mem_stats(self):
         '''this will return memory utilization statistics'''
         mem = psutil.virtual_memory()
-        for i in range(0, len(mem)-1):
+        for i in range(len(mem)):
             if mem._fields[i] == 'percent':
                 title = "Component/Memory/Utilization/%s[percent]" % mem._fields[i]
             else:
@@ -196,7 +196,7 @@ class NewRHELic:
     def _get_swap_stats(self):
         '''this will return swap information'''
         swap = psutil.swap_memory()
-        for i in range(0, len(swap)-1):
+        for i in range(len(swap)):
             if swap._fields[i] == 'percent':
                 title = "Component/Swap/Utilzation/%s[percent]" % swap._fields[i]
                 val = swap[i]
@@ -214,7 +214,7 @@ class NewRHELic:
         '''this will return either a list of active NFS mounts, or False'''
         p = Popen(['/etc/init.d/netfs', 'status'], stdout=PIPE, stderr=PIPE)
         mnt_data = p.stdout.readlines()
-        for i in range(0, len(mnt_data)-1):
+        for i in range(len(mnt_data)):
             if 'Active NFS mountpoints' in mnt_data[i]: #if this exists, we remove it
                 mnt_data.pop(i)
             mnt_data[i] = mnt_data[i].rstrip()
@@ -312,15 +312,15 @@ class NewRHELic:
 
         #create the first counter values to do math against for network, disk and swap
         net_io = psutil.net_io_counters()
-        for i in range(0,len(net_io)-1):
+        for i in range(len(net_io)):
             self.buffers[net_io._fields[i]] = net_io[i]
 
         disk_io = psutil.disk_io_counters()
-        for i in range(0,len(disk_io)-1):
+        for i in range(len(disk_io)):
             self.buffers[disk_io._fields[i]] = disk_io[i]
 
         swap_io = psutil.swap_memory()
-        for i in range(0,len(swap_io)-1):
+        for i in range(len(swap_io)):
             if swap_io._fields[i] == 'sin' or swap_io._fields[i] == 'sout':
                 self.buffers[swap_io._fields[i]] = swap_io[i]
 
