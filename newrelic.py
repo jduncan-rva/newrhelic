@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Mon 11 Nov 2013 07:34:59 PM EST
+# Last Modified : Mon 11 Nov 2013 08:19:23 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -142,6 +142,9 @@ class NewRHELic:
     def _get_cpu_utilization(self):
         '''This will return per-CPU utilization'''
         cpu_util = psutil.cpu_percent(interval=0, percpu=True)
+        cpu_util_agg = psutil.cpu_percent(interval=0)
+
+        self.metric_data['Component/CPU/Utilization/Aggregate[percent]'] = cpu_util_agg
 
         for i in range(len(cpu_util)):
             title = "Component/CPU/Utilization/Processor-%s[percent]" % i
