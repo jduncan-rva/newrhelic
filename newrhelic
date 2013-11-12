@@ -23,7 +23,13 @@
 # Purpose : a simple daemon for the NewRHELic plugin
 
 import time
-from daemon import runner 
+import os
+import sys
+from daemon import runner
+
+new_path = os.path.join(os.getcwd(),'NewRHELic/')
+sys.path.append(new_path)
+
 from newrelic import NewRHELic
 
 class RunApp:

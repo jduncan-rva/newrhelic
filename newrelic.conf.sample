@@ -16,20 +16,5 @@ enable_network = False
 enable_memory = True
 enable_proc = True
 enable_swap = True
+enable_nfs = False
 
-[disk]
-title = Disk Statistics
-
-[network]
-title = Network Statistics
-
-[memory]
-title = Memory Statistics
-
-[proc]
-title = Processor Statistics
-cpu_time_title = CPU Time Statistics
-cpu_util_title = CPU Utilization
-
-[swap]
-title = Swap Statistics
