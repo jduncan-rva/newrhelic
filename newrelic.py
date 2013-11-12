@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Mon 11 Nov 2013 09:35:13 PM EST
+# Last Modified : Tue 12 Nov 2013 09:35:44 AM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -191,6 +191,10 @@ class NewRHELic:
         for i in range(len(mem)):
             if mem._fields[i] == 'percent':
                 title = "Component/Memory/Utilization/%s[percent]" % mem._fields[i]
+            elif mem._fields[i] == 'active' or mem._fields[i] == 'inactive':
+                title = "Component/Memory/Recent Activity/%s[bytes]" % mem._fields[i]
+            elif mem._fields[i] == 'total' or mem._fields[i] == 'free':
+                title = "Components/Memory/System Total/%s[bytes]" % mem._fields[i]
             else:
                 title = "Component/Memory/IO/%s[bytes]" % mem._fields[i]
 
