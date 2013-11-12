@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Mon 11 Nov 2013 08:24:45 PM EST
+# Last Modified : Mon 11 Nov 2013 09:35:13 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -201,7 +201,7 @@ class NewRHELic:
         swap = psutil.swap_memory()
         for i in range(len(swap)):
             if swap._fields[i] == 'percent':
-                title = "Component/Swap/Utilzation/%s[percent]" % swap._fields[i]
+                title = "Component/Swap/Utilization/%s[percent]" % swap._fields[i]
                 val = swap[i]
             elif swap._fields[i] == 'sin' or swap._fields[i] == 'sout':
                 title = "Component/Swap/IO/%s[bytes]" % swap._fields[i]
