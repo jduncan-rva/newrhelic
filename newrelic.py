@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Mon 11 Nov 2013 07:17:46 PM EST
+# Last Modified : Mon 11 Nov 2013 07:34:59 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -214,11 +214,11 @@ class NewRHELic:
         '''this will return either a list of active NFS mounts, or False'''
         p = Popen(['/etc/init.d/netfs', 'status'], stdout=PIPE, stderr=PIPE)
         mnt_data = p.stdout.readlines()
+        new_mnt_data = []
         for i in range(len(mnt_data)):
-            if 'Active NFS mountpoints' in mnt_data[i]: #if this exists, we remove it
-                mnt_data.pop(i)
-            mnt_data[i] = mnt_data[i].rstrip()
-        return mnt_data
+            if 'Active NFS mountpoints' not in mnt_data[i]: #if this exists, we remove it
+                new_mnt_data.append(mnt_data[i].rstrip())
+        return new_mnt_data
 
     def _get_nfs_info(self, volume):
         '''this will add NFS stats for a given NFS mount to metric_data'''
