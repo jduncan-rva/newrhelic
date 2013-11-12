@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Tue 12 Nov 2013 09:35:44 AM EST
+# Last Modified : Tue 12 Nov 2013 12:07:49 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -114,12 +114,14 @@ class NewRHELic:
 
     def _get_sys_info(self):
         '''This will populate some basic system information
-	### THIS IS CURRENLTLY NOT SUPPORTED BY NEW RELIC ###'''
+	### INPUT OTHER THAN INTEGERS IS CURRENLTLY NOT SUPPORTED BY NEW RELIC ###'''
 
-        self.metric_data['/Component/System Information/Kernel[string]'] = self.kernel
-        self.metric_data['/Component/System Information/Arch[string]'] = self.arch
-        self.metric_data['/Component/System Information/Boot Time[datetime]'] = self._get_boottime()
+        #self.metric_data['/Component/System Information/Kernel[string]'] = self.kernel
+        #self.metric_data['/Component/System Information/Arch[string]'] = self.arch
+        #self.metric_data['/Component/System Information/Boot Time[datetime]'] = self._get_boottime()
         self.metric_data['/Component/System Information/Process Count[integer]'] = len(psutil.get_pid_list())
+        self.metric_data['/Component/System Information/Core Count[integer]'] = psutil.NUM_CORES
+        self.metric_data['/Component/System Information/Active Sessions[integer]'] = len(psutil.get_users())
 
     def _get_net_stats(self):
         '''This will form network IO stats for the entire system'''
@@ -193,8 +195,8 @@ class NewRHELic:
                 title = "Component/Memory/Utilization/%s[percent]" % mem._fields[i]
             elif mem._fields[i] == 'active' or mem._fields[i] == 'inactive':
                 title = "Component/Memory/Recent Activity/%s[bytes]" % mem._fields[i]
-            elif mem._fields[i] == 'total' or mem._fields[i] == 'free':
-                title = "Components/Memory/System Total/%s[bytes]" % mem._fields[i]
+            elif mem._fields[i] == 'total' or mem._fields[i] == 'free' or mem._fields[i] == 'available':
+                title = "Component/Memory/System Total/%s[bytes]" % mem._fields[i]
             else:
                 title = "Component/Memory/IO/%s[bytes]" % mem._fields[i]
 
@@ -291,7 +293,7 @@ class NewRHELic:
         c_dict['duration'] = self.duration
 
         #always get the sys information
-        #self._get_sys_info()
+        self._get_sys_info()
 
         if self.enable_disk:
             self._get_disk_utilization()
