@@ -17,8 +17,8 @@ import base64
 import re
 import warnings
 
-import _psutil_posix
-import _psutil_linux
+from psutil import _psutil_posix
+from psutil import _psutil_linux
 from psutil import _psposix
 from psutil._error import AccessDenied, NoSuchProcess, TimeoutExpired
 from psutil._common import *
