@@ -4,6 +4,7 @@ from distutils.core import setup, Extension
 
 setup(name='NewRHELic',
     version='0.1',
+    release='2',
     description='RHEL/CentOS monitoring plugin for New Relic',
     author='Jamie Duncan',
     author_email='jduncan@redhat.com',
