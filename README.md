@@ -6,8 +6,12 @@ A RHEL/CentOS-centric plugin for New Relic Monitoring App
 Installation
 ------------
 * RPM
-    * Dowload the source
-    * python setup.py sdist_rpm
+    * Dowload the source and execute:
+    ```python
+    python setup.py sdist_rpm
+    ```
 * Source Distribution
-    * Download the source
-    * python setup.py sdist
+    * Download the source and execute:
+    ```python
+    python setup.py sdist
+    ```
