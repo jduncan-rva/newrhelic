@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Tue 12 Nov 2013 12:47:32 PM EST
+# Last Modified : Tue 12 Nov 2013 11:50:29 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -33,7 +33,9 @@ from subprocess import Popen, PIPE
 
 class NewRHELic:
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, conf='/etc/newrhelic.conf'):
+
+        self.config_file = conf
 
         #store some system info
         self.uname = os.uname()
@@ -69,9 +71,8 @@ class NewRHELic:
         }
 
         try:
-            config_file = os.path.expanduser('~/.newrelic')
             config = ConfigParser.RawConfigParser()
-            config.read(config_file)
+            config.read(self.config_file)
 
             self.license_key = config.get('site', 'key')
             self.api_url = config.get('site', 'url')

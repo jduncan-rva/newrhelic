@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: NewRHELic
+Version: 0.1
+Summary: RHEL/CentOS monitoring plugin for New Relic
+Home-page: https://github.com/jduncan-rva/newRHELic
+Author: Jamie Duncan
+Author-email: jduncan@redhat.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN

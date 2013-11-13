@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+# -*- coding: iso-8859-15 -*-
+# Copyright (C) 2013  Jamie Duncan (jamie.e.duncan@gmail.com)
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# File Name : newrhelic
+# Creation Date : 11-08-2013
+# Created By : Jamie Duncan
+# Last Modified : Sun 10 Nov 2013 10:03:51 PM EST
+# Purpose : a simple daemon for the NewRHELic plugin
+
+import time
+import os
+import sys
+
+new_path = os.path.join(os.getcwd(),'NewRHELic/')
+sys.path.append(new_path)
+
+from daemon import runner
+from newrelic import NewRHELic
+
+class RunApp:
+    def __init__(self):
+        self.data = NewRHELic()
+        self.stdin_path = '/dev/null'
+        self.stdout_path = '/dev/tty'
+        self.stderr_path = '/dev/tty'
+        self.pidfile_path =  '/tmp/newrhelic.pid'
+        self.pidfile_timeout = 5
+
+    def run(self):
+        while True:
+            self.data.add_to_newrelic()
+            time.sleep(60)
+
+app = RunApp()
+daemon_runner = runner.DaemonRunner(app)
+daemon_runner.do_action()
