@@ -1,5 +1,0 @@
-include README*
-include LICENSE*
-include newrhelic.conf
-include newrhelic-plugin
-recursive-include psutil *.h

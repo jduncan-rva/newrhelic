@@ -8,7 +8,7 @@ setup(name='NewRHELic',
     author='Jamie Duncan',
     author_email='jduncan@redhat.com',
     url='https://github.com/jduncan-rva/newRHELic',
-    packages=['psutil','daemon','daemon.version'],
+    packages=['psutil','daemon','daemon.version','lockfile'],
     py_modules=['newrelic'],
     ext_modules=[
         Extension('_psutil_linux',['psutil/_psutil_linux.c']),
