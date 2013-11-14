@@ -2,8 +2,11 @@
 
 from distutils.core import setup, Extension
 
-setup(name='NewRHELic',
-    version='0.1',
+version = '0.1'
+
+setup(
+    name='NewRHELic',
+    version=version,
     description='RHEL/CentOS monitoring plugin for New Relic',
     author='Jamie Duncan',
     author_email='jduncan@redhat.com',
@@ -20,7 +23,7 @@ setup(name='NewRHELic',
     scripts = ['newrhelic'],
     data_files=[
         ('/etc',['newrhelic.conf']),
-        ('/usr/share/doc/NewRHELic-0.1', ['LICENSE', 'LICENSE-psutil', 'LICENSE-daemon', 'README', 'README.md']),
+        ('/usr/share/doc/NewRHEL-%s'% version, ['README','README.md','LICENSE','LICENSE-psutil','LICENSE-daemon','NewRHELic.spec']),
         ('/etc/init.d', ['newrhelic-plugin']),
         ],
     )
