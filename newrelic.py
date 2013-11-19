@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Tue 12 Nov 2013 11:50:29 PM EST
+# Last Modified : Tue 19 Nov 2013 11:22:30 AM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -117,12 +117,12 @@ class NewRHELic:
         '''This will populate some basic system information
 	### INPUT OTHER THAN INTEGERS IS CURRENLTLY NOT SUPPORTED BY NEW RELIC ###'''
 
-        #self.metric_data['/Component/System Information/Kernel[string]'] = self.kernel
-        #self.metric_data['/Component/System Information/Arch[string]'] = self.arch
-        #self.metric_data['/Component/System Information/Boot Time[datetime]'] = self._get_boottime()
-        self.metric_data['/Component/System Information/Process Count[integer]'] = len(psutil.get_pid_list())
-        self.metric_data['/Component/System Information/Core Count[integer]'] = psutil.NUM_CPUS
-        self.metric_data['/Component/System Information/Active Sessions[integer]'] = len(psutil.get_users())
+        #self.metric_data['Component/System Information/Kernel[string]'] = self.kernel
+        #self.metric_data['Component/System Information/Arch[string]'] = self.arch
+        #self.metric_data['Component/System Information/Boot Time[datetime]'] = self._get_boottime()
+        self.metric_data['Component/System Information/Process Count[integer]'] = len(psutil.get_pid_list())
+        self.metric_data['Component/System Information/Core Count[integer]'] = psutil.NUM_CPUS
+        self.metric_data['Component/System Information/Active Sessions[integer]'] = len(psutil.get_users())
 
     def _get_net_stats(self):
         '''This will form network IO stats for the entire system'''
