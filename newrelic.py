@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Tue 19 Nov 2013 11:22:30 AM EST
+# Last Modified : Tue 19 Nov 2013 02:54:07 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -80,6 +80,11 @@ class NewRHELic:
             self.guid = config.get('plugin', 'guid')
             self.name = config.get('plugin', 'name')
             self.version = config.get('plugin','version')
+            self.enable_proxy = config.get_boolean('site','enable_proxy')
+
+            if self.enable_proxy:
+                self.http_proxy = config.get('site','http_proxy')
+                self.http_proxy_port = config.get('site','http_proxy_port')
 
             #create a dictionary to hold the various data metrics.
             self.metric_data = {}
@@ -351,10 +356,15 @@ class NewRHELic:
 
         self._build_component_stanza()  #get the data added up
         try:
-            req = urllib2.Request(self.api_url)
-            req.add_header("X-License-Key", self.license_key)
-            req.add_header("Content-Type","application/json")
-            req.add_header("Accept","application/json")
+            opener = urllib2.build_opener(
+                urllib2.HTTPHandler(),
+                urllib2.HTTPSHandler(),
+                if self.enable_proxy:
+                    urllib2.ProxyHandler({'http': '%s:%s' % (self.http_proxy, self.http_proxy_port)})
+            )
+            opener.add_headers[("X-License-Key", self.license_key),("Content-Type","application/json"),("Accept","application/json")]
+            urllib2.install_opener(opener)
+
             response = urllib2.urlopen(req, json.dumps(self.json_data))
             if self.debug:
                 print response.getcode()
