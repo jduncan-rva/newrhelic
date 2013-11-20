@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Wed 20 Nov 2013 03:34:43 PM EST
+# Last Modified : Wed 20 Nov 2013 03:59:58 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -367,7 +367,7 @@ class NewRHELic:
             request.add_header("Content-Type","application/json")
             request.add_header("Accept","application/json")
 
-            response = urllib2.urlopen(req, json.dumps(self.json_data))
+            response = urllib2.urlopen(request, json.dumps(self.json_data))
 
             if self.debug:
                 print request.get_full_url()
