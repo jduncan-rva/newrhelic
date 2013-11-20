@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Tue 19 Nov 2013 02:54:07 PM EST
+# Last Modified : Wed 20 Nov 2013 03:28:32 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -356,25 +356,33 @@ class NewRHELic:
 
         self._build_component_stanza()  #get the data added up
         try:
-            opener = urllib2.build_opener(
-                urllib2.HTTPHandler(),
-                urllib2.HTTPSHandler(),
-                if self.enable_proxy:
-                    urllib2.ProxyHandler({'http': '%s:%s' % (self.http_proxy, self.http_proxy_port)})
-            )
-            opener.add_headers[("X-License-Key", self.license_key),("Content-Type","application/json"),("Accept","application/json")]
-            urllib2.install_opener(opener)
+            if self.enable_proxy:
+                proxy_handler = urllib2.ProxyHandler({'https': '%s:%s' % (self.http_proxy, self.http_proxy_port)})
+                opener = urllib2.build_opener(proxy_handler)
+            else:
+                opener = urllib2.build_opener(urllib2.HTTPHandler(), urllib2.HTTPSHandler())
+
+            request = urllib2.Request(self.api_url)
+            request.add_header("X-License-Key", self.license_key)
+            request.add_header("Content-Type","application/json")
+            request.add_header("Accept","application/json")
 
             response = urllib2.urlopen(req, json.dumps(self.json_data))
+
             if self.debug:
+                print request.get_full_url()
                 print response.getcode()
                 print json.dumps(self.json_data)
+                sys.stdout.flush()
+
             response.close()
+
         except urllib2.HTTPError, err:
             if self.debug:
                 print err.code
                 print json.dumps(self.json_data)
             pass    #i know, i don't like it either, but we don't want a single failed connection to break the loop.
+
         except urllib2.URLError, err:
             if self.debug:
                 print err   #this error will kick if you lose DNS resolution briefly. We'll keep trying.
