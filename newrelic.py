@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Wed 20 Nov 2013 03:28:32 PM EST
+# Last Modified : Wed 20 Nov 2013 03:34:43 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -80,7 +80,7 @@ class NewRHELic:
             self.guid = config.get('plugin', 'guid')
             self.name = config.get('plugin', 'name')
             self.version = config.get('plugin','version')
-            self.enable_proxy = config.get_boolean('site','enable_proxy')
+            self.enable_proxy = config.getboolean('site','enable_proxy')
 
             if self.enable_proxy:
                 self.http_proxy = config.get('site','http_proxy')
