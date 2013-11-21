@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Wed 20 Nov 2013 05:40:18 PM EST
+# Last Modified : Thu 21 Nov 2013 10:06:19 AM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -80,11 +80,12 @@ class NewRHELic:
             self.guid = config.get('plugin', 'guid')
             self.name = config.get('plugin', 'name')
             self.version = config.get('plugin','version')
-            self.enable_proxy = config.getboolean('site','enable_proxy')
+            self.enable_proxy = config.getboolean('proxy','enable_proxy')
 
             if self.enable_proxy:
-                self.http_proxy = config.get('site','http_proxy')
-                self.http_proxy_port = config.get('site','http_proxy_port')
+                self.proxy_type = config.get('proxy','proxy_type')
+                self.http_proxy = config.get('proxy','httpproxy_url')
+                self.http_proxy_port = config.get('proxy','httpproxy_port')
 
             #create a dictionary to hold the various data metrics.
             self.metric_data = {}
@@ -357,7 +358,7 @@ class NewRHELic:
         self._build_component_stanza()  #get the data added up
         try:
             if self.enable_proxy:
-                proxy_handler = urllib2.ProxyHandler({'https': '%s:%s' % (self.http_proxy, self.http_proxy_port)})
+                proxy_handler = urllib2.ProxyHandler({'%s: %s:%s' % (self.proxy_type, self.http_proxy, self.http_proxy_port)})
                 opener = urllib2.build_opener(proxy_handler)
             else:
                 opener = urllib2.build_opener(urllib2.HTTPHandler(), urllib2.HTTPSHandler())
