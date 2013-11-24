@@ -1,5 +1,4 @@
 recursive-include psutil *.h
 include newrhelic*
-include *.spec
 include LICENSE*
 include README*

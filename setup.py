@@ -27,7 +27,7 @@ setup(
     scripts = ['newrhelic'],
     data_files=[
         ('/etc',['newrhelic.conf']),
-        ('/usr/share/doc/NewRHEL-%s'% version, ['README','README.md','LICENSE','LICENSE-psutil','LICENSE-daemon','NewRHELic.spec']),
+        ('/usr/share/doc/NewRHEL-%s'% version, ['README','README.md','LICENSE','LICENSE-psutil','LICENSE-daemon']),
         ('/etc/init.d', ['newrhelic-plugin']),
         ],
     )
