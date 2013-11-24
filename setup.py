@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
 from distutils.core import setup, Extension
+import ConfigParser
 
-version = '0.1'
+config = ConfigParser.RawConfigParser()
+config.read('newrhelic.conf')
+
+version = config.get('plugin','version')
 
 setup(
     name='NewRHELic',
