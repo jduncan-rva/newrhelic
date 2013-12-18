@@ -7,9 +7,10 @@ config = ConfigParser.RawConfigParser()
 config.read('newrhelic.conf')
 
 version = config.get('plugin','version')
+name = 'NewRHELic'
 
 setup(
-    name='NewRHELic',
+    name=name,
     version=version,
     description='RHEL/CentOS monitoring plugin for New Relic',
     author='Jamie Duncan',
@@ -24,11 +25,13 @@ setup(
     ext_modules=[
         Extension('_psutil_linux',['psutil/_psutil_linux.c']),
         Extension('_psutil_posix',['psutil/_psutil_posix.c'])],
-    scripts = ['newrhelic'],
+    scripts = ['scripts/newrhelic'],
     data_files=[
         ('/etc',['newrhelic.conf']),
-        ('/usr/share/doc/NewRHEL-%s'% version, ['README','README.md','LICENSE','LICENSE-psutil','LICENSE-daemon']),
-        ('/etc/init.d', ['newrhelic-plugin']),
+        ('/usr/share/doc/%s-%s'% (name, version), ['doc/README','doc/LICENSE']),
+        ('/usr/share/doc/psutil', ['doc/LICENSE-psutil']),
+        ('/usr/share/doc/daemon', ['doc/LICENSE-daemon']),
+        ('/etc/init.d', ['scripts/newrhelic-plugin']),
         ],
     )
 
