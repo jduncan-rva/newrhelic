@@ -17,7 +17,7 @@ lib64
 __pycache__
 MANIFEST
 *.cms
-
+*.bak
 
 
 # Installer logs
