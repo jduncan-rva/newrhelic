@@ -1,7 +1,21 @@
 newRHELic
 =========
 
-A RHEL/CentOS-centric plugin for New Relic Monitoring App
+A Red Hat Enteprise Linux plugin for New Relic
+
+While it's not tested, it should also work with the RHEL-derived projects like
+
+* CentOS
+* Scientific Linux
+* Oracle Enterprise Linux
+
+Monitoring Highlights
+---------------------
+
+* Per-CPU utilization
+* Network Errors and Dropped packets
+* Swap Statistics
+* Detailed CPU State Times
 
 Installation
 ------------
