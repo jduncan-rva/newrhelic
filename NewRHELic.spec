@@ -1,7 +1,7 @@
 %define name NewRHELic
 %define version 0.1
 %define unmangled_version 0.1
-%define release 11
+%define release 13
 
 Summary: RHEL/CentOS monitoring plugin for New Relic
 Name: %{name}
@@ -17,7 +17,13 @@ Packager: Jamie Duncan <jduncan@redhat.com>
 Url: https://github.com/jduncan-rva/newRHELic
 
 %description
-A RHEL 6/CentOS 6-specific monitoring plugin for New Relic (http://www.newrelic.com)
+A Red Hat Enterprise Linux-specific monitoring plugin for New Relic (http://www.newrelic.com). A Red Hat Community supported project. Details at http://newrelic.com/plugins/jamie-duncan/154. Currently working for RHEL 6 only.
+
+%pre
+if [ -a '/tmp/newrhelic.pid' ]
+then
+/sbin/service newrhelic-plugin stop
+fi
 
 %prep
 %setup -n %{name}-%{unmangled_version}
@@ -31,6 +37,10 @@ python setup.py install -O1 --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+%post
+/sbin/chkconfig newrhelic-plugin on
+/sbin/service newrhelic-plugin start
+
 %files -f INSTALLED_FILES
 %defattr(-,root,root)
 %config(noreplace) /etc/newrhelic.conf
@@ -38,6 +48,14 @@ rm -rf $RPM_BUILD_ROOT
 %postun
 
 %changelog
+* Sun Feb 23 2014 Jamie Duncan <jduncan@redhat.com> 0.1-13
+- improvements to spec file. looking to retire setup.cfg soon
+
+* Sat Feb 14 2014 Jamie Duncan <jduncan@redhat.com> 0.1-12
+- added spec file for future enhancement
+- added socket timeout (hard-coded @ 5seconds) to try and fix
+- the weird dead read syndrome we are seeing
+
 * Sun Dec 15 2013 Jamie Duncan <jduncan@redhat.com> 0.1-10
 - enabled an actual logging ability
 - enabled better error handling for when data is slow to be retrieved
