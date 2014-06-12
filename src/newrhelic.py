@@ -113,7 +113,7 @@ class NewRHELic:
                         'http': '%s:%s' % (proxy_host, proxy_port),
                         'https': '%s:%s' % (proxy_host, proxy_port)
                 }
-                logger.info("Configured to use proxy: %s:%s" (proxy_host, proxy_port))
+                self.logger.info("Configured to use proxy: %s:%s" (proxy_host, proxy_port))
 
 
             #create a dictionary to hold the various data metrics.
@@ -138,7 +138,7 @@ class NewRHELic:
             self._build_agent_stanza()
 
         except Exception, e:
-            logger.exception(e)
+            self.logger.exception(e)
             raise e
 
     def _get_boottime(self):
