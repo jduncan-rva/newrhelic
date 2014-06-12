@@ -88,9 +88,14 @@ class NewRHELic:
             self.enable_proxy = config.getboolean('proxy','enable_proxy')
 
             if self.enable_proxy:
-                self.proxy_type = config.get('proxy','proxy_type')
-                self.http_proxy = config.get('proxy','httpproxy_url')
-                self.http_proxy_port = config.get('proxy','httpproxy_port')
+                proxy_host = config.get('proxy','proxy_host')
+                proxy_port = config.get('proxy','proxy_port')
+                # These proxy_setttings will be used by urllib2
+                self.proxy_settings = {
+                        'http': '%s:%s' % (proxy_host, proxy_port),
+                        'https': '%s:%s' % (proxy_host, proxy_port)
+                }
+
 
             #create a dictionary to hold the various data metrics.
             self.metric_data = {}
@@ -426,7 +431,7 @@ class NewRHELic:
         self._build_component_stanza()  #get the data added up
         try:
             if self.enable_proxy:
-                proxy_handler = urllib2.ProxyHandler({'%s' % self.proxy_type : '%s:%s' % (self.http_proxy, self.http_proxy_port)})
+                proxy_handler = urllib2.ProxyHandler(self.proxy_settings)
                 opener = urllib2.build_opener(proxy_handler)
             else:
                 opener = urllib2.build_opener(urllib2.HTTPHandler(), urllib2.HTTPSHandler())
