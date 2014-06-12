@@ -1,51 +1,39 @@
-%define name NewRHELic
-%define version 0.1
-%define unmangled_version 0.1
-%define release 13
-
 Summary: RHEL/CentOS monitoring plugin for New Relic
-Name: %{name}
-Version: %{version}
-Release: %{release}
-Source0: %{name}-%{unmangled_version}.tar.gz
+Name: newrhelic
+Version: 0.1
+Release: 13%{?dist}
+Source0: %{name}-%{version}.tar.gz
 License: GPLv2
 Group: Monitoring
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Prefix: %{_prefix}
+BuildRequires: python2-devel
+BuildRequires: python-setuptools
+Requires: python-daemon
+Requires: python-psutil
 Vendor: Jamie Duncan <jduncan@redhat.com>
 Packager: Jamie Duncan <jduncan@redhat.com>
 Url: https://github.com/jduncan-rva/newRHELic
 
 %description
-A Red Hat Enterprise Linux-specific monitoring plugin for New Relic (http://www.newrelic.com). A Red Hat Community supported project. Details at http://newrelic.com/plugins/jamie-duncan/154. Currently working for RHEL 6 only.
-
-%pre
-if [ -a '/tmp/newrhelic.pid' ]
-then
-/sbin/service newrhelic-plugin stop
-fi
+A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
 
 %prep
-%setup -n %{name}-%{unmangled_version}
+%setup -q -n %{name}-%{version}
 
 %build
-env CFLAGS="$RPM_OPT_FLAGS" python setup.py build
+%{__python2} setup.py build
 
 %install
-python setup.py install -O1 --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
+%{__python2} setup.py install -O1 --root=$RPM_BUILD_ROOT
 
-%clean
-rm -rf $RPM_BUILD_ROOT
-
-%post
-/sbin/chkconfig newrhelic-plugin on
-/sbin/service newrhelic-plugin start
-
-%files -f INSTALLED_FILES
-%defattr(-,root,root)
+%files
 %config(noreplace) /etc/newrhelic.conf
-
-%postun
+/etc/init.d/newrhelic-plugin
+%dir %{_docdir}/%{name}-%{version}
+%{_docdir}/%{name}-%{version}/*
+%{python2_sitelib}/*egg-info
+%{python2_sitelib}/newrhelic*
+%{_bindir}/newrhelic
 
 %changelog
 * Sun Feb 23 2014 Jamie Duncan <jduncan@redhat.com> 0.1-13

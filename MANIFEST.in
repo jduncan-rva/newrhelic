@@ -1,5 +1,5 @@
-recursive-include psutil *.h
 recursive-include doc *
 recursive-include scripts *
-include newrhelic.conf
-include NewRHELic.spec
+recursive-include conf *
+recursive-include src *
+include newrhelic.spec
