@@ -26,6 +26,7 @@ setup(
         ('/etc',['conf/newrhelic.conf']),
         ('/usr/share/doc/%s-%s'% (name, version), ['doc/README','doc/LICENSE']),
         ('/etc/init.d', ['scripts/newrhelic-plugin']),
+        ('/usr/lib/systemd/system', ['scripts/newrhelic.service']),
         ],
     )
 

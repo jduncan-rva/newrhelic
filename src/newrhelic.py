@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Thu 12 Jun 2014 04:49:23 PM EDT
+# Last Modified : Thu 12 Jun 2014 07:37:14 PM EDT
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -57,7 +57,7 @@ class NewRHELic:
         self.on_fedora = False
         distro_test = open('/etc/redhat-release','r')
         d_version = distro_test[0].split()[0]
-        if d_version = 'Fedora':    #we're using Fedora, psutil is a different here.
+        if d_version == 'Fedora':    #we're using Fedora, psutil is a different here.
             self.on_fedora = True
 
 	#Various IO buffers
