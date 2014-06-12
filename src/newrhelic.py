@@ -113,7 +113,7 @@ class NewRHELic:
                         'http': '%s:%s' % (proxy_host, proxy_port),
                         'https': '%s:%s' % (proxy_host, proxy_port)
                 }
-                self.logger.info("Configured to use proxy: %s:%s" (proxy_host, proxy_port))
+                self.logger.info("Configured to use proxy: %s:%s" % (proxy_host, proxy_port))
 
 
             #create a dictionary to hold the various data metrics.
