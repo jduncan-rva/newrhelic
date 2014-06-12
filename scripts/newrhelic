@@ -37,7 +37,7 @@ except ImportError:
     from daemon import runner
     sys.path.remove('/usr/lib/python2.4/site-packages')
 
-from newrelic import NewRHELic
+from newrhelic import NewRHELic
 
 class RunApp:
     def __init__(self):
