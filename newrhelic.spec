@@ -1,3 +1,6 @@
+%{!?__python2: %global __python2 /usr/bin/python2}
+%global python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print (get_python_lib())")
+
 Summary: RHEL/CentOS monitoring plugin for New Relic
 Name: newrhelic
 Version: 0.1
@@ -8,6 +11,7 @@ Group: Monitoring
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
+BuildArch: noarch
 Requires: python-daemon
 Requires: python-psutil
 Vendor: Jamie Duncan <jduncan@redhat.com>
