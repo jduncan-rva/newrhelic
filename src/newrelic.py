@@ -19,7 +19,7 @@
 # File Name : newrelic.py
 # Creation Date : 11-06-2013
 # Created By : Jamie Duncan
-# Last Modified : Tue 10 Dec 2013 01:34:51 PM EST
+# Last Modified : Sat 15 Feb 2014 04:26:18 PM EST
 # Purpose : A RHEL/CentOS - specific OS plugin for New Relic
 
 import json
@@ -31,12 +31,14 @@ import sys
 import time
 from subprocess import Popen, PIPE
 import logging
+import socket
 
 class NewRHELic:
 
     def __init__(self, debug=False, conf='/etc/newrhelic.conf'):
 
         self.config_file = conf
+        socket.setdefaulttimeout(5)
 
         #store some system info
         self.uname = os.uname()
@@ -191,7 +193,7 @@ class NewRHELic:
             self.metric_data['Component/CPU/Load/1min[avg]'] = l[0]
             self.metric_data['Component/CPU/Load/5min[avg]'] = l[1]
             self.metric_data['Component/CPU/Load/15min[avg]'] = l[2]
-        except Exception,e
+        except Exception,e:
             logging.exception(e)
             pass
 
