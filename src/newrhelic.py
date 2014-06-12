@@ -87,6 +87,12 @@ class NewRHELic:
                     )
             self.logger = logging.getLogger(__name__)
             if self.debug:
+                # DEBUG logs!
+                console = logging.StreamHandler()
+                formatter = logging.Formatter('%(levelname)-8s %(name)s:%(funcName)s: %(message)s')
+                console.setLevel(logging.DEBUG)
+                console.setFormatter(formatter)
+                self.logger.addHandler(console)
                 self.logger.setLevel(logging.DEBUG)
             else:
                 self.logger.setLevel(loglevel)
