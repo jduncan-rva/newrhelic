@@ -38,7 +38,7 @@ class RunApp:
         self.stdin_path = '/dev/null'
         self.stdout_path = '/dev/tty'
         self.stderr_path = '/dev/tty'
-        self.pidfile_path =  '/tmp/newrhelic.pid'
+        self.pidfile_path =  '/var/run/newrhelic.pid'
         self.pidfile_timeout = 5
 
     def run(self):
