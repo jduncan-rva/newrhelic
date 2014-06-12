@@ -7,7 +7,7 @@
 #
 # processname: newrhelic
 # config: /etc/newrhelic.conf
-# pidfile: /tmp/newrhelic.pid
+# pidfile: /var/run/newrhelic.pid
 
 /usr/bin/newrhelic $1
 

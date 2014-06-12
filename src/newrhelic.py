@@ -42,7 +42,7 @@ class NewRHELic:
 
         #store some system info
         self.uname = os.uname()
-
+        self.pid = os.getpid()
         self.hostname = self.uname[1]  #this will likely be Linux-specific, but I don't want to load a whole module to get a hostname another way
         self.kernel = self.uname[2]
         self.arch = self.uname[4]
@@ -341,7 +341,7 @@ class NewRHELic:
         try:
             values = {}
             values['host'] = self.hostname
-            values['pid'] = 1000
+            values['pid'] = self.pid
             values['version'] = self.version
 
             self.json_data['agent'] = values
