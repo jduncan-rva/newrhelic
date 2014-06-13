@@ -7,7 +7,7 @@
 %global __os_install_post %{__python26_os_install_post}
 %else
 %global pyver 2
-%global pybasever 2.6
+%global pybasever 2
 %endif
 
 # Not sure about others
