@@ -73,7 +73,7 @@ A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
 rm -rf %{buildroot}
 
 %post
-%if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
+%if (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
 /bin/systemctl enable newrhelic.service
 %else
 /sbin/chkconfig --add newrhelic-plugin
@@ -82,10 +82,10 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %config(noreplace) /etc/newrhelic.conf
-%if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
-%config %attr(0755, root, root) %{_initddir}/newrhelic-plugin
-%else
+%if (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
 %{_unitdir}/newrhelic.service
+%else
+%config %attr(0755, root, root) %{_initddir}/newrhelic-plugin
 %endif
 
 %dir %{_docdir}/%{name}-%{version}
