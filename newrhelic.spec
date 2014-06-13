@@ -15,6 +15,8 @@
 %global __python2 %{_bindir}/python%{pybasever}
 
 %{!?python2_sitelib: %define python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+%{!?_initddir: %define _initddir /etc/rc.d/init.d }
+
 
 Summary: RHEL/CentOS monitoring plugin for New Relic
 Name: newrhelic
@@ -81,7 +83,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %config(noreplace) /etc/newrhelic.conf
 %if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
-%config %attr(0755, root, root) ${_initddir}/newrhelic-plugin
+%config %attr(0755, root, root) %{_initddir}/newrhelic-plugin
 %else
 %{_unitdir}/newrhelic.service
 %endif
