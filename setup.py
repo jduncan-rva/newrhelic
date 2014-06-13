@@ -4,8 +4,9 @@ from distutils.core import setup, Extension
 import ConfigParser
 import os
 
+on_fedora = False
 distro_test = open('/etc/redhat-release','r')
-d_version = distro_test[0].split()[0]
+d_version = distro_test.readlines()[0].split()[0]
 if d_version == 'Fedora':
     on_fedora = True
 
@@ -14,6 +15,17 @@ config.read('conf/newrhelic.conf')
 
 version = config.get('plugin','version')
 name = 'newrhelic'
+
+data_files = [
+    ('/etc',['conf/newrhelic.conf']),
+    ('/usr/share/doc/%s-%s'% (name, version), ['doc/README','doc/LICENSE']),
+]
+
+if on_fedora:
+    data_files.append(('/usr/lib/systemd/system',['scripts/newrhelic.service']))
+
+else:
+    data_files.append(('/etc/init.d', ['scripts/newrhelic-plugin']))
 
 setup(
     name=name,
@@ -28,14 +40,9 @@ setup(
     py_modules=['newrhelic'],
     package_dir={'': 'src'},
     scripts = ['scripts/newrhelic'],
-    data_files=[
-        ('/etc',['conf/newrhelic.conf']),
-        ('/usr/share/doc/%s-%s'% (name, version), ['doc/README','doc/LICENSE']),
-        ],
-    if on_fedora:
-        data_files.append(('/usr/lib/systemd/system', ['scripts/newrhelic.service']))
-    else:
-        data_files.append(('/etc/init.d', ['scripts/newrhelic-plugin']))
+    data_files=data_files
     )
+
+
 
 
