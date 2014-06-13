@@ -1,3 +1,4 @@
+### SPEC for newrhelic
 
 # EL5 will require python26 from EPEL
 %if 0%{rhel} == 5
@@ -11,9 +12,9 @@
 
 # Not sure about others
 
-%global __python %{_bindir}/python%{pybasever}
+%global __python2 %{_bindir}/python%{pybasever}
 
-%{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+%{!?python2_sitelib: %define python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: newrhelic
 Version: 0.1
@@ -59,11 +60,11 @@ A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
 %setup -q -n %{name}-%{version}
 
 %build
-%{__python} setup.py build
+%{__python2} setup.py build
 
 %install
 %{__rm} -rf %{buildroot}
-%{__python} setup.py install -O1 --root=$RPM_BUILD_ROOT
+%{__python2} setup.py install -O1 --root=$RPM_BUILD_ROOT
 
 %clean
 rm -rf %{buildroot}
