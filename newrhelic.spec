@@ -88,8 +88,8 @@ rm -rf %{buildroot}
 
 %dir %{_docdir}/%{name}-%{version}
 %{_docdir}/%{name}-%{version}/*
-%{python_sitelib}/*egg-info
-%{python_sitelib}/newrhelic*
+%{python2_sitelib}/*egg-info
+%{python2_sitelib}/newrhelic*
 %{_bindir}/newrhelic
 
 %changelog
