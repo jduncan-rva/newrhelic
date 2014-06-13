@@ -175,9 +175,9 @@ class NewRHELic:
     def _get_net_stats(self):
         '''This will form network IO stats for the entire system'''
         try:
-            if callable(psutil.net_io_counters):
+            try:
                 io = psutil.net_io_counters()
-            else:
+            except AttributeError:
                 io = psutil.network_io_counters()
 
             for i in range(len(io)):
@@ -425,9 +425,9 @@ class NewRHELic:
         '''this will prime the needed buffers to present valid data when math is needed'''
         try:
             #create the first counter values to do math against for network, disk and swap
-            if callable(psutil.net_io_counters):
+            try:
                 net_io = psutil.net_io_counters()
-            else:
+            except AttributeError:
                 net_io = psutil.network_io_counters()
             for i in range(len(net_io)):
                 self.buffers[net_io._fields[i]] = net_io[i]
