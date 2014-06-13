@@ -81,7 +81,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %config(noreplace) /etc/newrhelic.conf
 %if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
-%config %attr(0755, root, root) ${initddir}/newrhelic-plugin
+%config %attr(0755, root, root) ${_initddir}/newrhelic-plugin
 %else
 %{_unitdir}/newrhelic.service
 %endif
