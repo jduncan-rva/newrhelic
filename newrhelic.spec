@@ -14,6 +14,16 @@ BuildRequires: python-setuptools
 BuildArch: noarch
 Requires: python-daemon
 Requires: python-psutil
+%if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
+Requires: chkconfig
+Requires: initscripts
+%else
+%if 0%{?systemd_preun:1}
+Requires(post): systemd-units
+%endif
+BuildRequires: systemd-units
+%endif
+
 Vendor: Jamie Duncan <jduncan@redhat.com>
 Packager: Jamie Duncan <jduncan@redhat.com>
 Url: https://github.com/jduncan-rva/newRHELic
@@ -30,9 +40,21 @@ A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
 %install
 %{__python2} setup.py install -O1 --root=$RPM_BUILD_ROOT
 
+%post
+%if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
+/bin/systemctl enable newrhelic.service
+%else
+/sbin/chkconfig --add newrhelic-plugin
+%endif
+
 %files
 %config(noreplace) /etc/newrhelic.conf
-/etc/init.d/newrhelic-plugin
+%if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
+%config %attr(0755, root, root) ${initddir}/newrhelic-plugin
+%else
+%{_unitdir}/newrhelic.service
+%endif
+
 %dir %{_docdir}/%{name}-%{version}
 %{_docdir}/%{name}-%{version}/*
 %{python2_sitelib}/*egg-info
