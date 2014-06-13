@@ -21,7 +21,7 @@
 Summary: RHEL/CentOS monitoring plugin for New Relic
 Name: newrhelic
 Version: 0.1
-Release: 15%{?dist}
+Release: 16%{?dist}
 Source0: %{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{release}.tar.gz
@@ -33,6 +33,8 @@ BuildRequires: python-setuptools
 BuildArch: noarch
 Requires: python%{pyver}
 Requires: python-daemon
+Obsoletes: NewRHELic
+Conflicts: NewRHELic
 
 # RHEL 5 has to use python26-psutils
 %if 0%{rhel} == 5
@@ -95,8 +97,11 @@ rm -rf %{buildroot}
 %{_bindir}/newrhelic
 
 %changelog
+* Thu Jun 12 2014 Tommy McNeely <tommy@lark-it.com> 0.1-16
+- Added Obsoletes / Conflicts to replace old name
+
 * Thu Jun 12 2014 Tommy McNeely <tommy@lark-it.com> 0.1-15
-- Fixing all the EL7 vs EL6 vs EL5 issues
+- Fixing all the EL7 vs EL6 vs EL5 issues (EL7 stuff was added by jduncan)
 
 * Thu Jun 12 2014 Tommy McNeely <tommy@lark-it.com> 0.1-14
 - attempts at making the same spec file work for EL5 and EL6
