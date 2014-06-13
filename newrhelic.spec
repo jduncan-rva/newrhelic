@@ -16,23 +16,19 @@
 
 %{!?python2_sitelib: %define python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
+Summary: RHEL/CentOS monitoring plugin for New Relic
 Name: newrhelic
 Version: 0.1
 Release: 14%{?dist}
-Summary: RHEL/CentOS monitoring plugin for New Relic
-
-Group: Applications/System
-Vendor: Jamie Duncan <jduncan@redhat.com>
-License: GPLv2
-URL: https://github.com/jduncan-rva/newRHELic
 Source0: %{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{release}.tar.gz
+License: GPLv2
+Group: Applications/System
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXXX)
-
-BuildArch: noarch
 BuildRequires: python%{pyver}-devel
 BuildRequires: python-setuptools
+BuildArch: noarch
 Requires: python%{pyver}
 Requires: python-daemon
 
@@ -43,6 +39,7 @@ Requires: python%{pyver}-psutil
 Requires: python-psutil
 %endif
 
+# RHEL7 and Fedora have different requirements
 %if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
 Requires: chkconfig
 Requires: initscripts
@@ -52,6 +49,10 @@ Requires(post): systemd-units
 %endif
 BuildRequires: systemd-units
 %endif
+
+Vendor: Jamie Duncan <jduncan@redhat.com>
+#Packager: Jamie Duncan <jduncan@redhat.com>
+Url: https://github.com/jduncan-rva/newRHELic
 
 %description
 A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
