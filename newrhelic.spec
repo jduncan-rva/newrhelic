@@ -34,7 +34,23 @@ BuildRequires: python%{pyver}-devel
 BuildRequires: python-setuptools
 Requires: python%{pyver}
 Requires: python-daemon
+
+# RHEL 5 has to use python26-psutils
+%if 0%{rhel} == 5
 Requires: python%{pyver}-psutil
+%else
+Requires: python-psutil
+%endif
+
+%if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
+Requires: chkconfig
+Requires: initscripts
+%else
+%if 0%{?systemd_preun:1}
+Requires(post): systemd-units
+%endif
+BuildRequires: systemd-units
+%endif
 
 %description
 A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
@@ -52,10 +68,22 @@ A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
 %clean
 rm -rf %{buildroot}
 
+%post
+%if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
+/bin/systemctl enable newrhelic.service
+%else
+/sbin/chkconfig --add newrhelic-plugin
+%endif
+
 %files
 %defattr(-,root,root,-)
 %config(noreplace) /etc/newrhelic.conf
-/etc/init.d/newrhelic-plugin
+%if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
+%config %attr(0755, root, root) ${initddir}/newrhelic-plugin
+%else
+%{_unitdir}/newrhelic.service
+%endif
+
 %dir %{_docdir}/%{name}-%{version}
 %{_docdir}/%{name}-%{version}/*
 %{python_sitelib}/*egg-info
