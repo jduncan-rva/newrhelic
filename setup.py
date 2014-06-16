@@ -24,7 +24,7 @@ data_files=[
 if on_fedora:
     data_files.append(('/usr/lib/systemd/system', ['scripts/newrhelic.service']))
 else:
-    data_files.append(('/etc/init.d', ['scripts/newrhelic-plugin']))
+    data_files.append(('/etc/rc.d/init.d', ['scripts/newrhelic-plugin']))
  
 setup(
     name=name,

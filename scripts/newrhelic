@@ -29,8 +29,15 @@ import sys
 new_path = os.path.join(os.getcwd(),'NewRHELic/')
 sys.path.append(new_path)
 
-from daemon import runner
-from newrelic import NewRHELic
+try:
+    from daemon import runner
+except ImportError:
+    # Try loading daemon from 2.4 (EL5)
+    sys.path.append('/usr/lib/python2.4/site-packages')
+    from daemon import runner
+    sys.path.remove('/usr/lib/python2.4/site-packages')
+
+from newrhelic import NewRHELic
 
 class RunApp:
     def __init__(self):

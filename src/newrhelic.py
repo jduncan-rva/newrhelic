@@ -53,13 +53,6 @@ class NewRHELic:
 
         self.first_run = True   #this is set to False after the first run function is called
 
-
-        self.on_fedora = False
-        distro_test = open('/etc/redhat-release','r')
-        d_version = distro_test[0].split()[0]
-        if d_version == 'Fedora':    #we're using Fedora, psutil is a different here.
-            self.on_fedora = True
-
 	#Various IO buffers
         self.buffers = {
             'bytes_sent': 0,
@@ -182,9 +175,9 @@ class NewRHELic:
     def _get_net_stats(self):
         '''This will form network IO stats for the entire system'''
         try:
-            if self.on_fedora:
+            try:
                 io = psutil.net_io_counters()
-            else:
+            except AttributeError:
                 io = psutil.network_io_counters()
 
             for i in range(len(io)):
@@ -432,9 +425,9 @@ class NewRHELic:
         '''this will prime the needed buffers to present valid data when math is needed'''
         try:
             #create the first counter values to do math against for network, disk and swap
-            if self.on_fedora:
+            try:
                 net_io = psutil.net_io_counters()
-            else:
+            except AttributeError:
                 net_io = psutil.network_io_counters()
             for i in range(len(net_io)):
                 self.buffers[net_io._fields[i]] = net_io[i]
