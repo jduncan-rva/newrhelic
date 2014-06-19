@@ -45,7 +45,7 @@ class RunApp:
         self.stdin_path = '/dev/null'
         self.stdout_path = '/dev/tty'
         self.stderr_path = '/dev/tty'
-        self.pidfile_path =  self.data.pid_file
+        self.pidfile_path =  '/var/run/newrhelic.pid'
         self.pidfile_timeout = 5
         self.files_preserve = self.getLogFileHandles(self.data.logger)
 
@@ -63,12 +63,13 @@ class RunApp:
     def run(self):
         while True:
             self.data.add_to_newrelic()
-            time.sleep(self.data.interval)
+            time.sleep(60)
 
 class NewRHELicDaemonRunner(runner.DaemonRunner):
     """ Extend the basic DaemonRunnner with file_preserve """
     def __init__(self, app):
         super(NewRHELicDaemonRunner, self).__init__(app)
+        app.data.logger.warning('Our Special Runner')
         self.daemon_context.files_preserve = app.files_preserve
 
 
