@@ -12,11 +12,9 @@ if d_version == 'Fedora':
 else:
     on_fedora = False
 
-config = ConfigParser.RawConfigParser()
-config.read('conf/newrhelic.conf')
-
-version = config.get('plugin','version')
+exec(open('src/_version.py').read())
 name = 'newrhelic'
+version = __version__
 data_files=[
     ('/etc',['conf/newrhelic.conf']),
     ('/usr/share/doc/%s-%s'% (name, version), ['doc/README','doc/LICENSE']),
@@ -36,8 +34,8 @@ setup(
     maintainer='Jamie Duncan',
     maintainer_email = 'jduncan@redhat.com',
     long_description='A RHEL 6/CentOS 6-specific monitoring plugin for New Relic (http://www.newrelic.com)',
-    py_modules=['newrhelic'],
-    package_dir={'': 'src'},
+    packages=['newrhelic'],
+    package_dir={'newrhelic': 'src'},
     scripts = ['scripts/newrhelic'],
     data_files = data_files,
    )

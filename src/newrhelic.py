@@ -32,11 +32,16 @@ import time
 from subprocess import Popen, PIPE
 import logging
 import socket
+import _version
 
 class NewRHELic:
 
     def __init__(self, debug=False, conf='/etc/newrhelic.conf'):
 
+        self.guid = 'com.rhel.os_statistics'
+        self.name = 'OS Statistics'
+        self.version = _version.__version__
+        self.api_url = 'https://platform-api.newrelic.com/platform/v1/metrics'
         self.config_file = conf
         socket.setdefaulttimeout(5)
 
@@ -103,11 +108,8 @@ class NewRHELic:
 
         try:
             self.license_key = config.get('site', 'key')
-            self.api_url = config.get('site', 'url')
-            self.duration = config.getint('plugin', 'duration')
-            self.guid = config.get('plugin', 'guid')
-            self.name = config.get('plugin', 'name')
-            self.version = config.get('plugin','version')
+            self.pid_file = config.get('plugin', 'pidfile')
+            self.interval = config.getint('plugin', 'interval')
             self.enable_proxy = config.getboolean('proxy','enable_proxy')
 
             if self.enable_proxy:
@@ -392,7 +394,7 @@ class NewRHELic:
             c_dict = {}
             c_dict['name'] = self.hostname
             c_dict['guid'] = self.guid
-            c_dict['duration'] = self.duration
+            c_dict['duration'] = self.interval
 
             #always get the sys information
             self._get_sys_info()
