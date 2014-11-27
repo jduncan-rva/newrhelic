@@ -195,7 +195,7 @@ class NewRHELic:
     def _get_cpu_states(self):
         '''This will get CPU states as a percentage of time'''
         try:
-            cpu_states = psutil.cpu_times_percent()
+            cpu_states = psutil.cpu_times()
 
             for i in range(len(cpu_states)):
                 title = "Component/CPU/State Time/%s[percent]" % cpu_states._fields[i]

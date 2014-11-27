@@ -4,25 +4,14 @@ from distutils.core import setup, Extension
 import ConfigParser
 import os
 
-releaseFile = open('/etc/redhat-release','r')
-distro_test = releaseFile.read()
-d_version = distro_test[0].split()[0]
-if d_version == 'Fedora':
-    on_fedora = True
-else:
-    on_fedora = False
-
 exec(open('src/_version.py').read())
 name = 'newrhelic'
 version = __version__
 data_files=[
     ('/etc',['conf/newrhelic.conf']),
     ('/usr/share/doc/%s-%s'% (name, version), ['doc/README','doc/LICENSE']),
+    ('/etc/rc.d/init.d', ['scripts/newrhelic-plugin'])
 ]
-if on_fedora:
-    data_files.append(('/usr/lib/systemd/system', ['scripts/newrhelic.service']))
-else:
-    data_files.append(('/etc/rc.d/init.d', ['scripts/newrhelic-plugin']))
  
 setup(
     name=name,
@@ -39,5 +28,3 @@ setup(
     scripts = ['scripts/newrhelic'],
     data_files = data_files,
    )
-
-

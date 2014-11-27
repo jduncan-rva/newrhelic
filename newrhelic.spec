@@ -1,61 +1,25 @@
-### SPEC for newrhelic
-
-# EL5 will require python26 from EPEL
-%if 0%{rhel} == 5
-%global pyver 26
-%global pybasever 2.6
-%global __os_install_post %{__python26_os_install_post}
-%else
-%global pyver 2
-%global pybasever 2
-%endif
-
-# Not sure about others
-
-%global __python2 %{_bindir}/python%{pybasever}
-
-%{!?python2_sitelib: %define python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
-%{!?_initddir: %define _initddir /etc/rc.d/init.d }
-
+%{!?__python2: %global __python2 /usr/bin/python2}
+%global python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print (get_python_lib())")
 
 Summary: RHEL/CentOS monitoring plugin for New Relic
 Name: newrhelic
-Version: 0.1
-Release: 16%{?dist}
+Version: 0.2.0
+Release: 2%{?dist}
 Source0: %{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{release}.tar.gz
 License: GPLv2
 Group: Applications/System
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXXX)
-BuildRequires: python%{pyver}-devel
+BuildRequires: python2-devel
 BuildRequires: python-setuptools
 BuildArch: noarch
-Requires: python%{pyver}
+Requires: python
 Requires: python-daemon
+Requires: python-psutil
 Obsoletes: NewRHELic
 Conflicts: NewRHELic
-
-# RHEL 5 has to use python26-psutils
-%if 0%{rhel} == 5
-Requires: python%{pyver}-psutil
-%else
-Requires: python-psutil
-%endif
-
-# RHEL7 and Fedora have different requirements
-%if ! (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
-Requires: chkconfig
-Requires: initscripts
-%else
-%if 0%{?systemd_preun:1}
-Requires(post): systemd-units
-%endif
-BuildRequires: systemd-units
-%endif
-
 Vendor: Jamie Duncan <jduncan@redhat.com>
-#Packager: Jamie Duncan <jduncan@redhat.com>
 Url: https://github.com/jduncan-rva/newRHELic
 
 %description
@@ -68,28 +32,11 @@ A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
 %{__python2} setup.py build
 
 %install
-%{__rm} -rf %{buildroot}
 %{__python2} setup.py install -O1 --root=$RPM_BUILD_ROOT
 
-%clean
-rm -rf %{buildroot}
-
-%post
-%if (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
-/bin/systemctl enable newrhelic.service
-%else
-/sbin/chkconfig --add newrhelic-plugin
-%endif
-
 %files
-%defattr(-,root,root,-)
 %config(noreplace) /etc/newrhelic.conf
-%if (0%{?rhel} >= 7 || 0%{?fedora} >= 15)
-%{_unitdir}/newrhelic.service
-%else
 %config %attr(0755, root, root) %{_initddir}/newrhelic-plugin
-%endif
-
 %dir %{_docdir}/%{name}-%{version}
 %{_docdir}/%{name}-%{version}/*
 %{python2_sitelib}/*egg-info
@@ -97,6 +44,13 @@ rm -rf %{buildroot}
 %{_bindir}/newrhelic
 
 %changelog
+* Thu Nov 27 2014 Jamie Duncan <jduncan@redhat.com> 0.2.0-2
+- fixed typo in cpu states function
+
+* Wed Nov 26 2014 Jamie Duncan <jduncan@redhat.com> 0.2.0-1
+- a little clean up and getting ready for 0.2
+- starting to get spec file ready for fedora in case we want to submit
+
 * Thu Jun 12 2014 Tommy McNeely <tommy@lark-it.com> 0.1-16
 - Added Obsoletes / Conflicts to replace old name
 
