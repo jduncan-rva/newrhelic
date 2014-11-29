@@ -25,6 +25,7 @@
 import json
 import psutil
 import urllib2
+from httplib import BadStatusLine
 import ConfigParser
 import os
 import sys
@@ -197,9 +198,9 @@ class NewRHELic:
         try:
             cpu_states = psutil.cpu_times()
 
-            for i in range(len(cpu_states)):
-                title = "Component/CPU/State Time/%s[percent]" % cpu_states._fields[i]
-                self.metric_data[title] = cpu_states[i]
+            for i in range(len(cpu_states)):                  
+                title = "Component/CPU/State Time/%s[percent]" % (c,cpu_states._fields[i])
+                self.metric_data[title] = cpu_states[i] / 100
         except Exception, e:
             self.logger.exception(e)
             pass
@@ -480,6 +481,8 @@ class NewRHELic:
 
             response.close()
 
+        # We've tried to add the data. Now to account for any specific exceptions that could break the agent
+        # that we would like to avoid.
         except urllib2.HTTPError, err:
             self.logger.error("HTTP Error: %s" % err)
             pass    #i know, i don't like it either, but we don't want a single failed connection to break the loop.
@@ -487,4 +490,10 @@ class NewRHELic:
         except urllib2.URLError, err:
             self.logger.error("URL Error (DNS Error?): %s" % err)
             pass
+
+        except httplib.BadStatusLine, err:
+            # ran into this error on a test system - I believe it was the ghost in the machine we never found last year.
+            self.logger.error("HTTP Connection Closed Prematurely: %s" % err)
+            pass
+
         self._reset_json_data()
