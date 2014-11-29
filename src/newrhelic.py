@@ -195,14 +195,19 @@ class NewRHELic:
 
     def _get_cpu_states(self):
         '''This will get CPU states as a percentage of time'''
-        try:
-            cpu_states = psutil.cpu_times()
-
-            for i in range(len(cpu_states)):                  
-                title = "Component/CPU/State Time/%s[percent]" % (c,cpu_states._fields[i])
-                self.metric_data[title] = cpu_states[i] / 100
-        except Exception, e:
-            self.logger.exception(e)
+        if psutil.cpu_times_percent:
+            try:
+                cpu_states = psutil.cpu_times()
+    
+                for i in range(len(cpu_states)):                  
+                    title = "Component/CPU/State Time/%s[percent]" % (c,cpu_states._fields[i])
+                    self.metric_data[title] = cpu_states[i] / 100
+            except Exception, e:
+                self.logger.exception(e)
+                pass
+        else:
+            # TODO
+            # We need to build out this math by hand if the cpu_tiems_percent function doesn't exist in psutil - jduncan
             pass
 
     def _get_cpu_utilization(self):

@@ -4,7 +4,7 @@
 Summary: RHEL/CentOS monitoring plugin for New Relic
 Name: newrhelic
 Version: 0.2.0
-Release: 2%{?dist}
+Release: 5%{?dist}
 Source0: %{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{release}.tar.gz
@@ -17,7 +17,7 @@ BuildArch: noarch
 Requires: python
 Requires: python-daemon
 Requires: python-psutil
-Obsoletes: NewRHELic
+Obsoletes: NewRHELic 
 Conflicts: NewRHELic
 Vendor: Jamie Duncan <jduncan@redhat.com>
 Url: https://github.com/jduncan-rva/newRHELic
