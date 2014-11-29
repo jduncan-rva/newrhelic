@@ -4,7 +4,7 @@
 Summary: RHEL/CentOS monitoring plugin for New Relic
 Name: newrhelic
 Version: 0.2.0
-Release: 5%{?dist}
+Release: 7%{?dist}
 Source0: %{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{release}.tar.gz
@@ -44,6 +44,9 @@ A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
 %{_bindir}/newrhelic
 
 %changelog
+* Sat Nov 30 2014 Jamie Duncan <jduncan@redhat.com> 0.2.0-7
+- refactored CPU Percent States for versions of psutil that do not have that function. fixes #24
+
 * Thu Nov 27 2014 Jamie Duncan <jduncan@redhat.com> 0.2.0-2
 - fixed typo in cpu states function
 

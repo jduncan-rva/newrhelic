@@ -79,6 +79,9 @@ class NewRHELic:
             'sout': 0,
         }
 
+        # adding in to solve the cpu percent time issue in RHEL 6
+        self.cpu_buffers = dict()
+
         # Open the config and log files in their own try/except
         try:
             config = ConfigParser.RawConfigParser()
@@ -194,20 +197,30 @@ class NewRHELic:
             pass
 
     def _get_cpu_states(self):
-        '''This will get CPU states as a percentage of time'''
-        if "cpu_times_percent" in dir(psutil):
-            try:
-                cpu_states = psutil.cpu_times_percent()
-    
-                for i in range(len(cpu_states)):                  
-                    title = "Component/CPU/State Time/%s[percent]" % (c,cpu_states._fields[i])
-                    self.metric_data[title] = cpu_states[i] / 100
-            except Exception, e:
-                self.logger.exception(e)
-                pass
-        else:
-            # TODO
-            # We need to build out this math by hand if the cpu_tiems_percent function doesn't exist in psutil - jduncan
+        # This will get CPU states as a percentage of time
+        # used to help calcuate percentage times in the cpu_times_percent function isn't available in psutil
+        # due to the age of the version (affects RHEL 6 and older 
+        # based on  https://github.com/giampaolo/psutil/blob/master/psutil/__init__.py#L1542-1609
+        # since the math isn't too massive computationally, we'll use this universally for now
+        # if this is rebased into RHEL 6 we may revisit it then - jduncan
+
+        try:
+            t2 = psutil.cpu_times()._asdict()
+            all_delta = sum(t2.values()) - sum(self.cpu_buffers.values())
+            for field in self.cpu_buffers.keys():
+                field_delta = t2[field] - self.cpu_buffers[field]
+                try:
+                    field_perc = (100 * field_delta) / all_delta
+                except ZeroDivisionError:
+                    field_perc = 0.0
+                field_perc = round(field_perc, 1)
+
+                # now we add the rounded percentage data to the New Relic metrics for uploading
+                title = "Component/CPU/State Time/%s[percent]" % field
+                self.metric_data[title] =  field_perc
+            
+        except Exception, e:
+            self.logger.exception(e)
             pass
 
     def _get_cpu_utilization(self):
@@ -432,7 +445,7 @@ class NewRHELic:
     def _prep_first_run(self):
         '''this will prime the needed buffers to present valid data when math is needed'''
         try:
-            #create the first counter values to do math against for network, disk and swap
+            # Create the first counter values to do math against for network, disk and swap
             try:
                 net_io = psutil.net_io_counters()
             except AttributeError:
@@ -449,7 +462,12 @@ class NewRHELic:
                 if swap_io._fields[i] == 'sin' or swap_io._fields[i] == 'sout':
                     self.buffers[swap_io._fields[i]] = swap_io[i]
 
-            #then we sleep so the math represents 1 minute intervals when we do it next
+            # Fill up the CPU Buffers so we can calculate CPU State Percentages accurately
+            d = psutil.cpu_times()._asdict()
+            for field in d.keys():
+                self.cpu_buffers[field] = d[field]
+
+            # Then we sleep so the math represents 1 minute intervals when we do it next
             self.logger.debug("sleeping...")
             time.sleep(60)
             self.first_run = False
@@ -497,7 +515,8 @@ class NewRHELic:
             pass
 
         except httplib.BadStatusLine, err:
-            # ran into this error on a test system - I believe it was the ghost in the machine we never found last year.
+            # ran into this error on a test system 
+            # I believe it was the ghost in the machine we never found last year.
             self.logger.error("HTTP Connection Closed Prematurely: %s" % err)
             pass
 
