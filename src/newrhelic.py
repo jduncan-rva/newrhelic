@@ -25,7 +25,8 @@
 import json
 import psutil
 import urllib2
-import httplib
+from httplib import BadStatusLine
+from ssl import SSLError
 import ConfigParser
 import os
 import sys
@@ -506,6 +507,7 @@ class NewRHELic:
 
         # We've tried to add the data. Now to account for any specific exceptions that could break the agent
         # that we would like to avoid.
+        # The goal is to not let a single loss of a data point break the agent and force an service restart
         except urllib2.HTTPError, err:
             self.logger.error("HTTP Error: %s" % err)
             pass    #i know, i don't like it either, but we don't want a single failed connection to break the loop.
@@ -514,10 +516,17 @@ class NewRHELic:
             self.logger.error("URL Error (DNS Error?): %s" % err)
             pass
 
-        except httplib.BadStatusLine, err:
+        except BadStatusLine, err:
             # ran into this error on a test system 
             # I believe it was the ghost in the machine we never found last year.
+            # fixed with #23
             self.logger.error("HTTP Connection Closed Prematurely: %s" % err)
+            pass
+
+        except SSLError, err:
+            # another lower-level exception caught in a test system
+            # fixed with #25
+            self.logger.error("SSL Read Error: %s" % err)
             pass
 
         self._reset_json_data()
