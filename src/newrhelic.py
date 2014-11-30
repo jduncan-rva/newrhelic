@@ -25,7 +25,7 @@
 import json
 import psutil
 import urllib2
-from httplib import BadStatusLine
+import httplib
 import ConfigParser
 import os
 import sys

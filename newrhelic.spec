@@ -44,7 +44,7 @@ A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
 %{_bindir}/newrhelic
 
 %changelog
-* Sat Nov 30 2014 Jamie Duncan <jduncan@redhat.com> 0.2.0-7
+* Sat Nov 29 2014 Jamie Duncan <jduncan@redhat.com> 0.2.0-7
 - refactored CPU Percent States for versions of psutil that do not have that function. fixes #24
 
 * Thu Nov 27 2014 Jamie Duncan <jduncan@redhat.com> 0.2.0-2
@@ -65,11 +65,6 @@ A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
 
 * Sun Feb 23 2014 Jamie Duncan <jduncan@redhat.com> 0.1-13
 - improvements to spec file. looking to retire setup.cfg soon
-
-* Sat Feb 14 2014 Jamie Duncan <jduncan@redhat.com> 0.1-12
-- added spec file for future enhancement
-- added socket timeout (hard-coded @ 5seconds) to try and fix
-- the weird dead read syndrome we are seeing
 
 * Sun Dec 15 2013 Jamie Duncan <jduncan@redhat.com> 0.1-10
 - enabled an actual logging ability
