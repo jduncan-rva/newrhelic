@@ -4,7 +4,7 @@
 Summary: RHEL/CentOS monitoring plugin for New Relic
 Name: newrhelic
 Version: 0.2.0
-Release: 9%{?dist}
+Release: 10%{?dist}
 Source0: %{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{release}.tar.gz
@@ -17,6 +17,9 @@ BuildArch: noarch
 Requires: python
 Requires: python-daemon
 Requires: python-psutil
+Requires(post): chkconfig
+Requires(preun): chkconfig
+Requires(preun): initscripts
 Obsoletes: NewRHELic 
 Conflicts: NewRHELic
 Vendor: Jamie Duncan <jduncan@redhat.com>
@@ -33,6 +36,20 @@ A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
 
 %install
 %{__python2} setup.py install -O1 --root=$RPM_BUILD_ROOT
+
+%post
+/sbin/chkconfig --add newrhelic-plugin
+
+%preun
+if [ $1 -eq 0]; then
+    /sbin/service newrhelic-plugin stop >/dev/null 2>&1
+    /sbin/chkconfig --del newrhelic-plugin
+fi
+
+%postun
+if [ "$1" -ge "1" ]; then
+    /sbin/service newrhelic-plugin condrestart >/dev/null 2>&1 || :
+fi
 
 %files
 %config(noreplace) /etc/newrhelic.conf
