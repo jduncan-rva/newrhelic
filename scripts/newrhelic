@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
@@ -22,17 +23,7 @@ import time
 import os
 import sys
 
-new_path = os.path.join(os.getcwd(),'NewRHELic/')
-sys.path.append(new_path)
-
-try:
-    from daemon import runner
-except ImportError:
-    # Try loading daemon from 2.4 (EL5)
-    sys.path.append('/usr/lib/python2.4/site-packages')
-    from daemon import runner
-    sys.path.remove('/usr/lib/python2.4/site-packages')
-
+from daemon import runner
 from newrhelic.newrhelic import NewRHELic
 
 class RunApp:
@@ -45,30 +36,10 @@ class RunApp:
         self.pidfile_timeout = 5
         self.files_preserve = self.getLogFileHandles(self.data.logger)
 
-    def getLogFileHandles(self,logger):
-        """ Get a list of filehandle numbers from logger
-            to be handed to DaemonContext.files_preserve
-        """
-        handles = []
-        for handler in logger.handlers:
-            handles.append(handler.stream.fileno())
-        if logger.parent:
-            handles += self.getLogFileHandles(logger.parent)
-        return handles
-
     def run(self):
         while True:
             self.data.add_to_newrelic()
             time.sleep(60)
 
-class NewRHELicDaemonRunner(runner.DaemonRunner):
-    """ Extend the basic DaemonRunnner with file_preserve """
-    def __init__(self, app):
-        super(NewRHELicDaemonRunner, self).__init__(app)
-        app.data.logger.warning('Our Special Runner')
-        self.daemon_context.files_preserve = app.files_preserve
-
-
 app = RunApp()
-daemon_runner = NewRHELicDaemonRunner(app)
 daemon_runner.do_action()

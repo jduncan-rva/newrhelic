@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: iso-8859-15 -*-
 # Copyright (C) 2013  Jamie Duncan (jamie.e.duncan@gmail.com)
 
 # This program is free software; you can redistribute it and/or
@@ -38,7 +36,7 @@ import _version
 
 class NewRHELic:
 
-    def __init__(self, debug=False, conf='/etc/newrhelic.conf'):
+    def __init__(self, conf='/etc/newrhelic.conf'):
 
         self.guid = 'com.rhel.os_statistics'
         self.name = 'OS Statistics'
@@ -53,8 +51,6 @@ class NewRHELic:
         self.hostname = self.uname[1]  #this will likely be Linux-specific, but I don't want to load a whole module to get a hostname another way
         self.kernel = self.uname[2]
         self.arch = self.uname[4]
-
-        self.debug = debug
 
         self.json_data = {}     #a construct to hold the json call data as we build it
 
@@ -89,22 +85,12 @@ class NewRHELic:
             config.read(self.config_file)
           
             logfilename = config.get('plugin','logfile')
-            loglevel = config.get('plugin','loglevel')
+            loglevel = config.get('plugin','loglevel').upper()
             logging.basicConfig(filename=logfilename,
-                    level=logging.INFO,
-                    format='%(asctime)s [%(levelname)s] %(name)s:%(funcName)s: %(message)s',
-                    )
+                level=loglevel,
+                format='%(asctime)s [%(levelname)s] %(name)s:%(funcName)s: %(message)s',
+            )
             self.logger = logging.getLogger(__name__)
-            if self.debug:
-                # DEBUG logs!
-                console = logging.StreamHandler()
-                formatter = logging.Formatter('%(levelname)-8s %(name)s:%(funcName)s: %(message)s')
-                console.setLevel(logging.DEBUG)
-                console.setFormatter(formatter)
-                self.logger.addHandler(console)
-                self.logger.setLevel(logging.DEBUG)
-            else:
-                self.logger.setLevel(loglevel)
 
         except Exception, e:
             # Might be nice to properly catch this and emit a nice message?
@@ -214,11 +200,14 @@ class NewRHELic:
                     field_perc = (100 * field_delta) / all_delta
                 except ZeroDivisionError:
                     field_perc = 0.0
-                field_perc = round(field_perc, 1)
+                field_perc = round(field_perc, 2)
 
                 # now we add the rounded percentage data to the New Relic metrics for uploading
                 title = "Component/CPU/State Time/%s[percent]" % field
                 self.metric_data[title] =  field_perc
+
+                # and finally set the buffer to the current values so the next time the math will be right
+                self.cpu_buffers[field] = t2[field]
             
         except Exception, e:
             self.logger.exception(e)
@@ -499,9 +488,8 @@ class NewRHELic:
 
             response = opener.open(request, json.dumps(self.json_data))
 
-            if self.logger.isEnabledFor(logging.DEBUG):
-                self.logger.debug("%s (%s)" % (request.get_full_url(), response.getcode()))
-                self.logger.debug(json.dumps(self.json_data))
+            self.logger.debug("%s (%s)" % (request.get_full_url(), response.getcode()))
+            self.logger.debug(json.dumps(self.json_data))
 
             response.close()
 
