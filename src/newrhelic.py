@@ -85,9 +85,9 @@ class NewRHELic:
             config.read(self.config_file)
           
             logfilename = config.get('plugin','logfile')
-            loglevel = logging.DEBUG
+            loglevel = config.get('plugin','loglevel').upper()
             logging.basicConfig(filename=logfilename,
-                level=logging.DEBUG,
+                level=eval(loglevel),
                 format='%(asctime)s [%(levelname)s] %(name)s:%(funcName)s: %(message)s',
             )
             self.logger = logging.getLogger(__name__)

@@ -3,8 +3,8 @@
 
 Summary: RHEL/CentOS monitoring plugin for New Relic
 Name: newrhelic
-Version: 0.2.0
-Release: 14%{?dist}
+Version: 0.2.1
+Release: 1%{?dist}
 Source0: %{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{release}.tar.gz
@@ -61,6 +61,9 @@ fi
 %{_bindir}/newrhelic
 
 %changelog
+* Mon Dec 8 2014 Jamie Duncan <jduncan@redhat.com> 0.2.1-1
+- getting cleaned up and ready for prime time
+
 * Sun Nov 30 2014 Jamie Duncan <jduncan@redhat.com> 0.2.0-9
 - caught unhandled ssl read error - fixes #25
 
