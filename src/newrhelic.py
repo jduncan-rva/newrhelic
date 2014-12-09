@@ -117,21 +117,11 @@ class NewRHELic:
             #create a dictionary to hold the various data metrics.
             self.metric_data = {}
 
-            if config.getboolean('plugin','enable_all') == True:
-                self.enable_disk = True
-                self.enable_net = True
-                self.enable_mem = True
-                self.enable_proc = True
-                self.enable_swap = True
-                self.enable_nfs = True
-
-            else:
-                self.enable_disk = config.getboolean('plugin', 'enable_disk')
-                self.enable_net = config.getboolean('plugin', 'enable_network')
-                self.enable_mem = config.getboolean('plugin', 'enable_memory')
-                self.enable_proc = config.getboolean('plugin', 'enable_proc')
-                self.enable_swap = config.getboolean('plugin', 'enable_swap')
-                self.enable_nfs = config.getboolean('plugin', 'enable_nfs')
+            self.enable_disk = config.getboolean('core', 'enable_disk')
+            self.enable_net = config.getboolean('core', 'enable_network')
+            self.enable_mem = config.getboolean('core', 'enable_memory')
+            self.enable_proc = config.getboolean('core', 'enable_proc')
+            self.enable_swap = config.getboolean('core', 'enable_swap')
 
             self._build_agent_stanza()
 
@@ -317,62 +307,6 @@ class NewRHELic:
             self.logger.exception(e)
             pass
 
-    def _get_nfs_mounts(self):
-        '''this will return either a list of active NFS mounts, or False'''
-        p = Popen(['/etc/init.d/netfs', 'status'], stdout=PIPE, stderr=PIPE)
-        mnt_data = p.stdout.readlines()
-        new_mnt_data = []
-        for i in range(len(mnt_data)):
-            if 'Active NFS mountpoints' not in mnt_data[i]: #if this exists, we remove it
-                new_mnt_data.append(mnt_data[i].rstrip())
-        return new_mnt_data
-
-    def _get_nfs_info(self, volume):
-        '''this will add NFS stats for a given NFS mount to metric_data'''
-        try:
-            p = Popen(['/usr/sbin/nfsiostat', '%s' % volume ], stdout=PIPE, stderr=PIPE)
-            retcode = p.wait()
-            statdict = []
-            volname = 'Component/NFS%s/' % volume
-            for i in iter(p.stdout.readline, ''):
-                statdict.append(i.rstrip('/').rstrip())
-            statdict.remove(statdict[0])
-
-            nfs_data = {
-                volname + 'Metrics/ops[sec]': float(statdict[3].split()[0]),
-                volname + 'Metrics/rpcbklog[int]': float(statdict[3].split()[1]),
-                volname + 'Read/ops[sec]': float(statdict[5].split()[0]),
-                volname + 'Read/kb[sec]': float(statdict[5].split()[1]),
-                volname + 'Read/ops[kb]': float(statdict[5].split()[2]),
-                volname + 'Read/retrans[int]': int(statdict[5].split()[3]),
-                volname + 'Time/Read/RTT/avg[ms]': float(statdict[5].split()[5]),
-                volname + 'Time/Read/Execute Time/avg[ms]': float(statdict[5].split()[6]),
-                volname + 'Write/writes[sec]': float(statdict[7].split()[0]),
-                volname + 'Write/kb[sec]': float(statdict[7].split()[1]),
-                volname + 'Write/ops[kb]': float(statdict[7].split()[2]),
-                volname + 'Write/retrans[int]': int(statdict[7].split()[3]),
-                volname + 'Time/Write/RTT/avg[ms]': float(statdict[7].split()[5]),
-                volname + 'Time/Write/Execute Time/avg[ms]': float(statdict[7].split()[6]),
-            }
-
-            for k,v in nfs_data.items():
-                self.metric_data[k] = v
-        except Exception, e:
-            self.logger.exception(e)
-            pass
-
-    def _get_nfs_stats(self):
-        '''this is called to iterate through all NFS mounts on a system and collate the data'''
-        try:
-            mounts = self._get_nfs_mounts()
-            if mounts > 0:
-                for vol in mounts:
-                    self._get_nfs_info(vol)
-                    self.logger.debug("processing NFS volume - %s" % vol)
-        except Exception, e:
-            self.logger.exception(e)
-            pass
-
     def _build_agent_stanza(self):
         '''this will build the 'agent' stanza of the new relic json call'''
         try:
@@ -421,8 +355,6 @@ class NewRHELic:
                 self._get_net_stats()
             if self.enable_swap:
                 self._get_swap_stats()
-            if self.enable_nfs:
-                self._get_nfs_stats()
 
             c_dict['metrics'] = self.metric_data
             c_list.append(c_dict)
