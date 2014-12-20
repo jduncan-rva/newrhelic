@@ -1,0 +1,27 @@
+NewRHELic Plugin Architechture
+Jamie Duncan
+2014-12-20
+
+SUMMARY
+NewRHELic now utilizes a simple plugin architecture. It is extremely strict at this point. This document will serve to provide some basics on how to structure additional plugins should you desire to do so.
+
+1. The newrhelic application
+
+On startup, the application reads the plugin_list from the plugins section of the newrhelic.conf config file (defaults to /etc/newrhelic.conf). This can be a comma-seperated list. 
+The values in this list must match the names of existing modules in the plugins folder for newrhelic. 
+
+When the application is started, each value in this list is used to create an instance of the plugin module to be processed each time the plugin is run (defaults to every 60 seconds).
+
+2. Plugin naming
+
+This is currently very strict. Expressed as an example: to enable the plugin named 'myplugin', you would:
+    1. add 'myplugin' to plugin_list in newrhelic.conf (minus quotes)
+    2. have a module in the plugins folder named 'myplugin'. so a file named plugins/myplugin.py would have to exist.
+    3. inside that module a class named 'myplugin' must exist.
+    4. part of that class must be a function named 'run' that can be called with no inputs.
+
+    The run() function is called for each plugin class that is enabled each time the plugin is processed.
+
+3. Future Improvements
+
+I'm not really sure. This is incredibly simplistic, and the onus is fully on the contributor to have some python coding experience. If this is a desired feature, we'll consider refactoring it down the road.
