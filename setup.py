@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup, Extension
-import ConfigParser
-import os
+from distutils.core import setup
 
 exec(open('src/_version.py').read())
 name = 'newrhelic'
@@ -23,8 +21,8 @@ setup(
     maintainer='Jamie Duncan',
     maintainer_email = 'jduncan@redhat.com',
     long_description='A RHEL 6/CentOS 6-specific monitoring plugin for New Relic (http://www.newrelic.com)',
-    packages=['newrhelic'],
-    package_dir={'newrhelic': 'src'},
+    packages = ['newrhelic.plugins','newrhelic'],
+    package_dir={'newrhelic': 'src','plugins':'src/plugins'},
     scripts = ['scripts/newrhelic'],
     data_files = data_files,
    )

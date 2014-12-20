@@ -45,41 +45,17 @@ class NewRHELic:
         self.config_file = conf
         socket.setdefaulttimeout(5)
 
-        #store some system info
+        # store some system info
         self.uname = os.uname()
         self.pid = os.getpid()
-        self.hostname = self.uname[1]  #this will likely be Linux-specific, but I don't want to load a whole module to get a hostname another way
+        self.hostname = self.uname[1]  # this will likely be Linux-specific, but I don't want to load a whole module to get a hostname another way
         self.kernel = self.uname[2]
         self.arch = self.uname[4]
 
-        self.json_data = {}     #a construct to hold the json call data as we build it
+        self.json_data = dict()     # a construct to hold the json call data as we build it
+        self.metric_data = dict()   # a dictionary to append all of the component data pieces to
+        self.first_run = True       # this is set to False after the first run function is called
 
-        self.first_run = True   #this is set to False after the first run function is called
-
-	#Various IO buffers
-        self.buffers = {
-            'bytes_sent': 0,
-            'bytes_recv': 0,
-            'packets_sent': 0,
-            'packets_recv': 0,
-            'errin' : 0,
-            'errout' : 0,
-            'dropin': 0,
-            'dropout': 0,
-            'read_count': 0,
-            'write_count': 0,
-            'read_bytes': 0,
-            'write_bytes': 0,
-            'read_time': 0,
-            'write_time': 0,
-            'sin': 0,
-            'sout': 0,
-        }
-
-        # adding in to solve the cpu percent time issue in RHEL 6
-        self.cpu_buffers = dict()
-
-        # Open the config and log files in their own try/except
         try:
             config = ConfigParser.RawConfigParser()
             config.read(self.config_file)
@@ -87,7 +63,7 @@ class NewRHELic:
             logfilename = config.get('plugin','logfile')
             loglevel = config.get('plugin','loglevel').upper()
             logging.basicConfig(filename=logfilename,
-                level=eval(loglevel),
+                level=eval('logging.%s' % loglevel),
                 format='%(asctime)s [%(levelname)s] %(name)s:%(funcName)s: %(message)s',
             )
             self.logger = logging.getLogger(__name__)
@@ -98,6 +74,18 @@ class NewRHELic:
             raise e
 
         try:
+            # Before we do anything else, we look to make sure we have at least one 
+            # plugin enabled
+            try:
+                raw_plugin_list = config.get('plugin', 'plugin_list')
+                self.enabled_plugins_list = raw_plugin_list.split(',')
+
+            except ConfigParser.NoOptionError, e:
+                self.logger.exception("No Plugins Enabled: %s" % e)
+                raise e
+
+            self.plugins = self._load_plugins()
+
             self.license_key = config.get('site', 'key')
             self.pid_file = config.get('plugin', 'pidfile')
             self.interval = config.getint('plugin', 'interval')
@@ -113,199 +101,69 @@ class NewRHELic:
                 }
                 self.logger.info("Configured to use proxy: %s:%s" % (proxy_host, proxy_port))
 
-
-            #create a dictionary to hold the various data metrics.
-            self.metric_data = {}
-
-            self.enable_disk = config.getboolean('core', 'enable_disk')
-            self.enable_net = config.getboolean('core', 'enable_network')
-            self.enable_mem = config.getboolean('core', 'enable_memory')
-            self.enable_proc = config.getboolean('core', 'enable_proc')
-            self.enable_swap = config.getboolean('core', 'enable_swap')
-
             self._build_agent_stanza()
 
         except Exception, e:
             self.logger.exception(e)
             raise e
 
-    def _get_boottime(self):
+    def _import_plugins(self):
+        ''' 
+        an INCREDIBLY simple plugin loader 
+        it looks in the plugins directory, and gives access to the submodules 
+        that are listed out in the enabled_plugins entry in /etc/newrhelic.conf
+        these are loaded with the _load_plugins() function
+        '''
         try:
-            '''a quick function to make uptime human-readable'''
-            a = time.gmtime(psutil.BOOT_TIME)
-            boottime = "%s-%s-%s %s:%s:%s" % (a.tm_mon, a.tm_mday, a.tm_year, a.tm_hour, a.tm_min, a.tm_sec)
-
-            return boottime
+            p = __import__('plugins', globals(), locals(), self.enabled_plugins_list, -1)
+            
+            return p
+                
         except Exception, e:
             self.logger.exception(e)
             raise e
 
-    def _get_sys_info(self):
-        '''This will populate some basic system information
-	### INPUT OTHER THAN INTEGERS IS CURRENLTLY NOT SUPPORTED BY NEW RELIC ###'''
+    def _load_plugins(self):
+        '''
+        This is the function that actually loads a plugin and makes it usable by the system
+        Since this is an incredibly simplistic system, it has some strict requirements:
+        location - all plugins must be located in the 'plugins' directory
+        naming - using the core plugin as an example:
+        this should be valid:
 
+        from plugins import core
+        x = core.core()
+        x.run()
+        
+        The plugin architecture uses the above naming convention to load the plugin modules and create instances
+        Each plugin has it's own class instance that is persisted as long as the daemon is running.
+        That allows for counters and other things that require comparison to the previous values to occur within
+        the plugin module
+        '''
         try:
-            #self.metric_data['Component/System Information/Kernel[string]'] = self.kernel
-            #self.metric_data['Component/System Information/Arch[string]'] = self.arch
-            #self.metric_data['Component/System Information/Boot Time[datetime]'] = self._get_boottime()
-            self.metric_data['Component/System Information/Process Count[process]'] = len(psutil.get_pid_list())
-            self.metric_data['Component/System Information/Core Count[core]'] = psutil.NUM_CPUS
-            self.metric_data['Component/System Information/Active Sessions[session]'] = len(psutil.get_users())
-        except Exception, e:
-            loging.exception(e)
-            pass
+            #initiate some strings to hold things
+            p_strings = list()
+            data = list()
 
-    def _get_net_stats(self):
-        '''This will form network IO stats for the entire system'''
-        try:
-            try:
-                io = psutil.net_io_counters()
-            except AttributeError:
-                io = psutil.network_io_counters()
+            # run through each of the enabled plugins
+            for m in self.enabled_plugins_list:
+                x = "plugin.%s.%s()" % (m,m)    # format it to something like "plugin.core.core"
+                p_strings.append(x)
 
-            for i in range(len(io)):
-                title = "Component/Network/IO/%s[bytes]" % io._fields[i]
-                val = io[i] - self.buffers[io._fields[i]]
-                self.buffers[io._fields[i]] = io[i]
-                self.metric_data[title] = val
+            plugin = self._import_plugins()     # we import the plugins module and its submodules
+            for mod in p_strings:
+                data.append(eval(mod))          # we create an instance of each module and create
+
+            return data     # we return the list of all the instantiated plugins
+
+        except AttributeError, e:
+            self.logger.warning("Unable to load Plugin: %s" % mod)
+            self.logger.exception(e)
+            raise e
 
         except Exception, e:
             self.logger.exception(e)
-            pass
-
-    def _get_cpu_states(self):
-        # This will get CPU states as a percentage of time
-        # used to help calcuate percentage times in the cpu_times_percent function isn't available in psutil
-        # due to the age of the version (affects RHEL 6 and older 
-        # based on  https://github.com/giampaolo/psutil/blob/master/psutil/__init__.py#L1542-1609
-        # since the math isn't too massive computationally, we'll use this universally for now
-        # if this is rebased into RHEL 6 we may revisit it then - jduncan
-
-        try:
-            t2 = psutil.cpu_times()._asdict()
-            all_delta = sum(t2.values()) - sum(self.cpu_buffers.values())
-            for field in self.cpu_buffers.keys():
-                field_delta = t2[field] - self.cpu_buffers[field]
-                try:
-                    field_perc = (100 * field_delta) / all_delta
-                except ZeroDivisionError:
-                    field_perc = 0.0
-                field_perc = round(field_perc, 2)
-
-                # now we add the rounded percentage data to the New Relic metrics for uploading
-                title = "Component/CPU/State Time/%s[percent]" % field
-                self.metric_data[title] =  field_perc
-
-                # and finally set the buffer to the current values so the next time the math will be right
-                self.cpu_buffers[field] = t2[field]
-            
-        except Exception, e:
-            self.logger.exception(e)
-            pass
-
-    def _get_cpu_utilization(self):
-        '''This will return per-CPU utilization'''
-        try:
-            cpu_util = psutil.cpu_percent(interval=0, percpu=True)
-            cpu_util_agg = psutil.cpu_percent(interval=0)
-
-            self.metric_data['Component/CPU/Utilization/Aggregate[percent]'] = cpu_util_agg
-
-            for i in range(len(cpu_util)):
-                title = "Component/CPU/Utilization/Processor-%s[percent]" % i
-                self.metric_data[title] = cpu_util[i]
-        except Exception, e:
-            self.logger.exception(e)
-            pass
-
-    def _get_cpu_load(self):
-        '''returns the 1/5/15 minute load averages'''
-        try:
-            l = os.getloadavg()
-
-            self.metric_data['Component/CPU/Load/1min[avg]'] = l[0]
-            self.metric_data['Component/CPU/Load/5min[avg]'] = l[1]
-            self.metric_data['Component/CPU/Load/15min[avg]'] = l[2]
-        except Exception, e:
-            self.logger.exception(e)
-            pass
-
-    def _get_disk_utilization(self):
-        '''This will return disk utilziation percentage for each mountpoint'''
-        try:
-            disks = psutil.disk_partitions() #all of the various partitions / volumes on a device
-            for p in disks:
-                title = "Component/Disk/Utilization/%s[percent]" % p.mountpoint.replace('/','|')
-                x = psutil.disk_usage(p.mountpoint)
-                self.metric_data[title] = x.percent
-        except Exception, e:
-            self.logger.exception(e)
-            pass
-
-    def _get_disk_stats(self):
-        '''this will show system-wide disk statistics'''
-        try:
-            d = psutil.disk_io_counters()
-
-            for i in range(len(d)):
-                if d._fields[i] == 'read_time' or d._fields[i] == 'write_time':         #statistics come in multiple units from this output
-                    title = "Component/Disk/Read-Write Time/%s[ms]" % d._fields[i]
-                    val = d[i]
-                elif d._fields[i] == 'read_count' or d._fields[i] == 'write_count':
-                    title = "Component/Disk/Read-Write Count/%s[integer]" % d._fields[i]
-                    val = d[i] - self.buffers[d._fields[i]]
-                    self.buffers[d._fields[i]] = d[i]
-                else:
-                    title = "Component/Disk/IO/%s[bytes]" % d._fields[i]
-                    val = d[i] - self.buffers[d._fields[i]]
-                    self.buffers[d._fields[i]] = d[i]
-
-                self.metric_data[title] = val
-        except Exception, e:
-            self.logger.exception(e)
-            pass
-
-    def _get_mem_stats(self):
-        '''this will return memory utilization statistics'''
-        try:
-            mem = psutil.virtual_memory()
-            program = mem.total - mem.available
-            self.metric_data['Component/Memory/IO/program[bytes]'] = program
-            for i in range(len(mem)):
-                if mem._fields[i] == 'percent':
-                    title = "Component/Memory/Utilization/%s[percent]" % mem._fields[i]
-                elif mem._fields[i] == 'active' or mem._fields[i] == 'inactive':
-                    title = "Component/Memory/Recent Activity/%s[bytes]" % mem._fields[i]
-                elif mem._fields[i] == 'total' or mem._fields[i] == 'used' or mem._fields[i] == 'available':
-                    title = "Component/Memory/System Total/%s[bytes]" % mem._fields[i]
-                else:
-                    title = "Component/Memory/IO/%s[bytes]" % mem._fields[i]
-
-                self.metric_data[title] = mem[i]
-        except Exception, e:
-            self.logger.exception(e)
-            pass
-
-    def _get_swap_stats(self):
-        '''this will return swap information'''
-        try:
-            swap = psutil.swap_memory()
-            for i in range(len(swap)):
-                if swap._fields[i] == 'percent':
-                    title = "Component/Swap/Utilization/%s[percent]" % swap._fields[i]
-                    val = swap[i]
-                elif swap._fields[i] == 'sin' or swap._fields[i] == 'sout':
-                    title = "Component/Swap/IO/%s[bytes]" % swap._fields[i]
-                    val = swap[i] - self.buffers[swap._fields[i]]
-                    self.buffers[swap._fields[i]] = swap[i] 
-                else:
-                    title = "Component/Swap/IO/%s[bytes]" % swap._fields[i]
-                    val = swap[i]
-
-                self.metric_data[title] = val
-        except Exception, e:
-            self.logger.exception(e)
-            pass
+            raise e
 
     def _build_agent_stanza(self):
         '''this will build the 'agent' stanza of the new relic json call'''
@@ -323,8 +181,8 @@ class NewRHELic:
     def _reset_json_data(self):
         '''this will 'reset' the json data structure and prepare for the next call. It does this by mimicing what happens in __init__'''
         try:
-            self.metric_data = {}
-            self.json_data = {}
+            self.metric_data = dict()
+            self.json_data = dict()
             self._build_agent_stanza()
         except Exception, e:
             self.logger.exception(e)
@@ -333,28 +191,17 @@ class NewRHELic:
     def _build_component_stanza(self):
         '''this will build the 'component' stanza for the new relic json call'''
         try:
-            c_list = []
-            c_dict = {}
+            c_list = list()
+            c_dict = dict()
             c_dict['name'] = self.hostname
             c_dict['guid'] = self.guid
             c_dict['duration'] = self.interval
 
-            #always get the sys information
-            self._get_sys_info()
-
-            if self.enable_disk:
-                self._get_disk_utilization()
-                self._get_disk_stats()
-            if self.enable_proc:
-                self._get_cpu_utilization()
-                self._get_cpu_states()
-                self._get_cpu_load()
-            if self.enable_mem:
-                self._get_mem_stats()
-            if self.enable_net:
-                self._get_net_stats()
-            if self.enable_swap:
-                self._get_swap_stats()
+            # This is where we run through our plugins and create the metric data that we want to upload
+            for p in self.plugins:
+                data = p.run()
+                for x in data.keys():
+                    self.metric_data[x] = data[x] 
 
             c_dict['metrics'] = self.metric_data
             c_list.append(c_dict)
@@ -367,27 +214,8 @@ class NewRHELic:
     def _prep_first_run(self):
         '''this will prime the needed buffers to present valid data when math is needed'''
         try:
-            # Create the first counter values to do math against for network, disk and swap
-            try:
-                net_io = psutil.net_io_counters()
-            except AttributeError:
-                net_io = psutil.network_io_counters()
-            for i in range(len(net_io)):
-                self.buffers[net_io._fields[i]] = net_io[i]
-
-            disk_io = psutil.disk_io_counters()
-            for i in range(len(disk_io)):
-                self.buffers[disk_io._fields[i]] = disk_io[i]
-
-            swap_io = psutil.swap_memory()
-            for i in range(len(swap_io)):
-                if swap_io._fields[i] == 'sin' or swap_io._fields[i] == 'sout':
-                    self.buffers[swap_io._fields[i]] = swap_io[i]
-
-            # Fill up the CPU Buffers so we can calculate CPU State Percentages accurately
-            d = psutil.cpu_times()._asdict()
-            for field in d.keys():
-                self.cpu_buffers[field] = d[field]
+            for p in self.plugins:
+                p.run()
 
             # Then we sleep so the math represents 1 minute intervals when we do it next
             self.logger.debug("sleeping...")

@@ -3,7 +3,7 @@
 
 Summary: RHEL/CentOS monitoring plugin for New Relic
 Name: newrhelic
-Version: 0.2.1
+Version: 0.3.0
 Release: 1%{?dist}
 Source0: %{name}-%{version}.tar.gz
 #Source0: https://github.com/jduncan-rva/newRHELic/archive/%{name}-%{version}.tar.gz
@@ -25,8 +25,23 @@ Conflicts: NewRHELic
 Vendor: Jamie Duncan <jduncan@redhat.com>
 Url: https://github.com/jduncan-rva/newRHELic
 
+%package common
+Summary: Common files for NewRHELic plugins
+Group: Applications/System
+
+%package core
+Summary: Core Server plugin for New Relic
+Group: Applications/System
+Requires: %{name}-common
+
 %description
+A collection of RHEL-centric plugins for the New Relic Monitoring as a Service platform
+
+%description core
 A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
+
+%description common
+Common configuration files for NewRHELic plugins
 
 %prep
 %setup -q -n %{name}-%{version}
@@ -37,30 +52,45 @@ A Red Hat Enterprise Linux-specific monitoring plugin for New Relic.
 %install
 %{__python2} setup.py install -O1 --root=$RPM_BUILD_ROOT
 
-%post
+%post core
 /sbin/chkconfig --add newrhelic-plugin
 
-%preun
+%preun core
 if [ $1 -eq 0]; then
     /sbin/service newrhelic-plugin stop >/dev/null 2>&1
     /sbin/chkconfig --del newrhelic-plugin
 fi
 
-%postun
+%postun core
 if [ "$1" -ge "1" ]; then
     /sbin/service newrhelic-plugin condrestart >/dev/null 2>&1 || :
 fi
 
-%files
+%files common
 %config(noreplace) /etc/newrhelic.conf
+%dir %{python2_sitelib}/newrhelic
+%dir %{python2_sitelib}/newrhelic/plugins
 %config %attr(0755, root, root) %{_initddir}/newrhelic-plugin
-%dir %{_docdir}/%{name}-%{version}
-%{_docdir}/%{name}-%{version}/*
-%{python2_sitelib}/*egg-info
-%{python2_sitelib}/newrhelic/*
+%{python2_sitelib}/newrhelic/__init__.py*
+%{python2_sitelib}/newrhelic/newrhelic.py*
+%{python2_sitelib}/newrhelic-*egg-info
+%{python2_sitelib}/newrhelic/plugins/__init__.py*
+%{python2_sitelib}/newrhelic/_version.py*
 %{_bindir}/newrhelic
+%{_docdir}/%{name}-%{version}/*
+
+%files core
+%{python2_sitelib}/newrhelic/plugins/core.py*
 
 %changelog
+* Sat Dec 20 2014 Jamie Duncan <jduncan@redhat.com> 0.3.0-1
+- bumping version number to reflect the architecture change to a plugin-ish model
+- 0.3.0 release
+
+* Tue Dec 9 2014 Jamie Duncan <jduncan@redhat.com> 0.2.2-1
+- refactord into a commong package and the first plugin (core)
+- this will allow easier, less repetitive plugins to be added easily
+
 * Mon Dec 8 2014 Jamie Duncan <jduncan@redhat.com> 0.2.1-1
 - getting cleaned up and ready for prime time
 
